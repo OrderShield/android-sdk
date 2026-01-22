@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    android:background="@color/white"
+    android:elevation="8dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Digital Signature Required"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Instruction Text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Please sign in the box below to complete your verification."
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Sign here hint -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sign here"
+            android:textColor="@color/gray_light"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Signature Pad -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="@drawable/bg_signature_box"
+            android:layout_marginBottom="16dp">
+
+            <com.github.gcacace.signaturepad.views.SignaturePad
+                android:id="@+id/signaturePad"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Draw your signature"
+                android:textColor="@color/placeholder_text"
+                android:textSize="14sp"
+                android:id="@+id/tvPlaceholder" />
+        </FrameLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="8dp">
+
+            <!-- Clear Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClear"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Clear"
+                android:textColor="@color/icon_blue"
+                android:backgroundTint="@color/white"
+                app:strokeColor="@color/icon_blue"
+                app:strokeWidth="1dp"
+                app:cornerRadius="8dp" />
+
+            <!-- Accept Signature Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAcceptSignature"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Accept"
+                android:textColor="@color/gray_light"
+                android:backgroundTint="@color/gray_lighter"
+                android:enabled="false"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+        <!-- Cancel Link -->
+        <TextView
+            android:id="@+id/tvCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:text="Cancel"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:padding="8dp" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,23 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme -->
+    <style name="Base.Theme.OrderShieldSDK" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Black buttons/app bar, white backgrounds -->
+        <item name="colorPrimary">@color/blue_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:colorBackground">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/black</item>
+        <item name="android:statusBarColor">@color/blue_primary</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <!-- Ensure status bar is visible -->
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <!-- Force black checkboxes -->
+        <item name="colorControlActivated">@color/black</item>
+        <item name="colorControlNormal">@color/gray_light</item>
+    </style>
+
+    <style name="Theme.OrderShieldSDK" parent="Base.Theme.OrderShieldSDK" />
+</resources>
+
