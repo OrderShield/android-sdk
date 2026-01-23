@@ -92,3 +92,23 @@ data class StartVerificationRequest(
     @SerializedName("customer_id")
     val customerId: String
 )
+
+/**
+ * Request model for submitting user information
+ */
+data class UserInfoRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("first_name")
+    val firstName: String,
+    
+    @SerializedName("last_name")
+    val lastName: String,
+    
+    @SerializedName("date_of_birth")
+    val dateOfBirth: String
+)

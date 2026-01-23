@@ -206,3 +206,88 @@ data class StartVerificationResponse(
     @SerializedName("statusCode")
     val statusCode: Int
 )
+
+/**
+ * Verification session info
+ */
+data class VerificationSession(
+    @SerializedName("session_id")
+    val sessionId: String,
+    
+    @SerializedName("steps_completed")
+    val stepsCompleted: List<String>?,
+    
+    @SerializedName("steps_remaining")
+    val stepsRemaining: List<String>?,
+    
+    @SerializedName("steps_optional")
+    val stepsOptional: List<String>?,
+    
+    @SerializedName("is_complete")
+    val isComplete: Boolean?,
+    
+    @SerializedName("completed_at")
+    val completedAt: String?
+)
+
+/**
+ * Selfie upload response data
+ */
+data class SelfieUploadData(
+    @SerializedName("step_completed")
+    val stepCompleted: String,
+    
+    @SerializedName("verification_session")
+    val verificationSession: VerificationSession?
+)
+
+/**
+ * Selfie upload API response wrapper
+ */
+data class SelfieUploadResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: SelfieUploadData,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * User info upload response data
+ */
+data class UserInfoUploadData(
+    @SerializedName("step_completed")
+    val stepCompleted: String,
+    
+    @SerializedName("verification_session")
+    val verificationSession: VerificationSession?
+)
+
+/**
+ * User info upload API response wrapper
+ */
+data class UserInfoUploadResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: UserInfoUploadData,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)

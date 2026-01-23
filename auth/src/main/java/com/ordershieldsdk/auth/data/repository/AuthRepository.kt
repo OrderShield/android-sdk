@@ -1,6 +1,7 @@
 package com.ordershieldsdk.auth.data.repository
 
 import com.ordershieldsdk.auth.core.NetworkModule
+import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.data.api.AuthApiService
 import com.ordershieldsdk.auth.data.model.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -204,16 +205,25 @@ class AuthRepository {
                         Result.success(customerId)
                     } ?: Result.failure(Exception(body.data.error ?: "Customer ID not found in response"))
                 } else {
-                    Result.failure(Exception(body.data.error ?: body.message ?: "Failed to register device"))
+                    // Check if banned
+                    val errorMessage = if (body.data.isBanned == true && body.data.banReason != null) {
+                        "Account banned: ${body.data.banReason}"
+                    } else {
+                        body.data.error ?: body.message ?: "Failed to register device"
+                    }
+                    Result.failure(Exception(errorMessage))
                 }
             } else {
-                Result.failure(
-                    Exception(
-                        response.body()?.message 
-                            ?: response.message() 
-                            ?: "Unknown error occurred"
-                    )
-                )
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -239,13 +249,128 @@ class AuthRepository {
                     Result.failure(Exception(body.message ?: "Failed to start verification"))
                 }
             } else {
-                Result.failure(
-                    Exception(
-                        response.body()?.message 
-                            ?: response.message() 
-                            ?: "Unknown error occurred"
-                    )
-                )
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Upload selfie image
+     * Returns success status
+     */
+    suspend fun uploadSelfie(imageFile: File): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            // Determine image format from file extension
+            val imageFormat = when {
+                imageFile.name.endsWith(".jpg", ignoreCase = true) || 
+                imageFile.name.endsWith(".jpeg", ignoreCase = true) -> "jpg"
+                imageFile.name.endsWith(".png", ignoreCase = true) -> "png"
+                else -> "jpg" // Default to jpg
+            }
+            
+            // Create multipart form data
+            val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+            val selfieImagePart = MultipartBody.Part.createFormData("selfie_image", imageFile.name, requestFile)
+            val customerIdPart = customerId.toRequestBody("text/plain".toMediaTypeOrNull())
+            val sessionTokenPart = sessionToken.toRequestBody("text/plain".toMediaTypeOrNull())
+            val imageFormatPart = imageFormat.toRequestBody("text/plain".toMediaTypeOrNull())
+            
+            val response = apiService.uploadSelfie(
+                selfieImage = selfieImagePart,
+                customerId = customerIdPart,
+                sessionToken = sessionTokenPart,
+                imageFormat = imageFormatPart
+            )
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data.verificationSession?.let { "Verification failed" }
+                        ?: "Failed to upload selfie"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Submit user information
+     * Returns success status
+     */
+    suspend fun submitUserInfo(firstName: String, lastName: String, dateOfBirth: String): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.UserInfoRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                firstName = firstName,
+                lastName = lastName,
+                dateOfBirth = dateOfBirth
+            )
+            
+            val response = apiService.submitUserInfo(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data.verificationSession?.let { "Verification failed" }
+                        ?: "Failed to submit user information"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             Result.failure(e)

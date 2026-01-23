@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.DeviceInfoHelper
+import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import kotlinx.coroutines.launch
@@ -69,19 +70,19 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
                         // Handle error
                         showLoader(false)
                         btnStartVerification.isEnabled = true
-                        // TODO: Show error message to user
+                        ErrorHandler.showError(requireContext(), exception)
                     }
                 }.onFailure { exception ->
                     // Handle error
                     showLoader(false)
                     btnStartVerification.isEnabled = true
-                    // TODO: Show error message to user
+                    ErrorHandler.showError(requireContext(), exception)
                 }
             } catch (e: Exception) {
                 // Handle exception
                 showLoader(false)
                 btnStartVerification.isEnabled = true
-                // TODO: Show error message to user
+                ErrorHandler.showError(requireContext(), e)
             }
         }
     }

@@ -27,12 +27,16 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.data.repository.AuthRepository
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -47,8 +51,11 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
     private lateinit var greenCircleOverlay: FrameLayout
     private lateinit var capturedImageView: ImageView
     private lateinit var faceOverlayView: FaceOverlayView
+    private lateinit var loadingOverlay: FrameLayout
 
     private var cameraProvider: ProcessCameraProvider? = null
+    private val repository = AuthRepository()
+    private var capturedImageFile: File? = null
     private var cameraExecutor: ExecutorService? = null
     private var imageCapture: ImageCapture? = null
     private var imageAnalyzer: ImageAnalysis? = null
@@ -82,6 +89,9 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         initViews(view)
         initFaceDetector()
         countdownHandler = Handler(Looper.getMainLooper())
+        
+        // Initialize loading overlay
+        loadingOverlay = view.findViewById(R.id.loadingOverlay)
         
         // Initially hide countdown ring and show instruction
         greenCircleOverlay.visibility = View.GONE
@@ -211,9 +221,10 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
             return
         }
         
-        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
-            File(requireContext().cacheDir, "captured_photo.jpg")
-        ).build()
+        val imageFile = File(requireContext().cacheDir, "captured_photo_${System.currentTimeMillis()}.jpg")
+        capturedImageFile = imageFile
+        
+        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(imageFile).build()
         
         imageCapture.takePicture(
             outputFileOptions,
@@ -223,21 +234,22 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                     // Load and display the captured image
                     val savedUri = output.savedUri
                     activity?.runOnUiThread {
-                        if (savedUri != null) {
+                        if (savedUri != null && imageFile.exists()) {
                             capturedImageView.setImageURI(savedUri)
                             capturedImageView.visibility = View.VISIBLE
                             viewFinder.visibility = View.GONE
                             
-                            // Show preview for 2 seconds, then navigate to next screen
-                            countdownHandler?.postDelayed({
-                                navigateToUserInformation()
-                            }, 2000)
+                            // Upload image immediately
+                            uploadSelfieImage(imageFile)
                         }
                     }
                 }
                 
                 override fun onError(exception: ImageCaptureException) {
                     Log.e("CameraFragment", "Photo capture failed", exception)
+                    activity?.runOnUiThread {
+                        ErrorHandler.showError(requireContext(), "Failed to capture photo. Please try again.")
+                    }
                 }
             }
         )
@@ -399,8 +411,41 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         faceDetectionTimer = null
     }
 
-    private fun navigateToUserInformation() {
-        navigateToNextStep()
+    private fun uploadSelfieImage(imageFile: File) {
+        // Show loader
+        showLoader(true)
+        
+        lifecycleScope.launch {
+            try {
+                val result = repository.uploadSelfie(imageFile)
+                
+                result.onSuccess { success ->
+                    if (success) {
+                        // Upload successful, navigate to next step
+                        showLoader(false)
+                        navigateToNextStep()
+                    } else {
+                        // Upload failed
+                        showLoader(false)
+                        ErrorHandler.showError(requireContext(), "Failed to upload selfie. Please try again.")
+                        Log.e("CameraFragment", "Selfie upload failed")
+                    }
+                }.onFailure { exception ->
+                    // Handle error
+                    showLoader(false)
+                    ErrorHandler.showError(requireContext(), exception)
+                    Log.e("CameraFragment", "Selfie upload error: ${exception.message}")
+                }
+            } catch (e: Exception) {
+                showLoader(false)
+                ErrorHandler.showError(requireContext(), e)
+                Log.e("CameraFragment", "Selfie upload exception: ${e.message}")
+            }
+        }
+    }
+    
+    private fun showLoader(show: Boolean) {
+        loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
     }
     
     private fun navigateToNextStep() {

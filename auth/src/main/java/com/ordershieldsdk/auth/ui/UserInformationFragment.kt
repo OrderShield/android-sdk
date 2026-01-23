@@ -13,9 +13,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.data.repository.AuthRepository
+import kotlinx.coroutines.launch
+import android.widget.FrameLayout
 import java.util.Calendar
 
 class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
@@ -25,11 +30,13 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
     private lateinit var etDateOfBirth: TextInputEditText
     private lateinit var btnContinue: MaterialButton
     private lateinit var scrollView: NestedScrollView
+    private lateinit var loadingOverlay: FrameLayout
     private var scrollPosition = 0
 
     private var firstName: String = ""
     private var lastName: String = ""
     private var dateOfBirth: String = ""
+    private val repository = AuthRepository()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -69,6 +76,7 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
         etDateOfBirth = view.findViewById(R.id.etDateOfBirth)
         btnContinue = view.findViewById(R.id.btnContinue)
         scrollView = view.findViewById(R.id.scrollView)
+        loadingOverlay = view.findViewById(R.id.loadingOverlay)
         
         // Enforce black theme on button when enabled
         enforceButtonTheme()
@@ -89,11 +97,15 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
         val datePickerDialog = DatePickerDialog(
             requireContext(),
             { _, selectedYear, selectedMonth, selectedDay ->
-                // Format date as mm/dd/yyyy
+                // Format date as YYYY-MM-DD for API
+                val formattedYear = selectedYear.toString()
                 val formattedMonth = String.format("%02d", selectedMonth + 1)
                 val formattedDay = String.format("%02d", selectedDay)
-                dateOfBirth = "$formattedMonth/$formattedDay/$selectedYear"
-                etDateOfBirth.setText(dateOfBirth)
+                dateOfBirth = "$formattedYear-$formattedMonth-$formattedDay"
+                
+                // Display date in user-friendly format (MM/DD/YYYY)
+                val displayDate = "$formattedMonth/$formattedDay/$formattedYear"
+                etDateOfBirth.setText(displayDate)
                 validateForm()
             },
             year,
@@ -221,9 +233,45 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
     
     private fun setupContinueButton() {
         btnContinue.setOnClickListener {
-            // Navigate to next step based on settings
-            navigateToNextStep()
+            if (isValid()) {
+                // Submit user info via API
+                submitUserInfo()
+            }
         }
+    }
+    
+    private fun submitUserInfo() {
+        // Show loader
+        showLoader(true)
+        
+        lifecycleScope.launch {
+            try {
+                val result = repository.submitUserInfo(firstName, lastName, dateOfBirth)
+                
+                result.onSuccess { success ->
+                    if (success) {
+                        // Submit successful, navigate to next step
+                        showLoader(false)
+                        navigateToNextStep()
+                    } else {
+                        // Submit failed
+                        showLoader(false)
+                        ErrorHandler.showError(requireContext(), "Failed to submit user information. Please try again.")
+                    }
+                }.onFailure { exception ->
+                    // Handle error
+                    showLoader(false)
+                    ErrorHandler.showError(requireContext(), exception)
+                }
+            } catch (e: Exception) {
+                showLoader(false)
+                ErrorHandler.showError(requireContext(), e)
+            }
+        }
+    }
+    
+    private fun showLoader(show: Boolean) {
+        loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
     }
     
     private fun navigateToNextStep() {
