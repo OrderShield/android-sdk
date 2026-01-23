@@ -266,6 +266,45 @@ class AuthRepository {
     }
 
     /**
+     * Get verification status
+     * Returns steps_remaining list on success
+     */
+    suspend fun getVerificationStatus(): Result<List<String>?> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val response = apiService.getVerificationStatus(customerId, sessionToken)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(body.data.stepsRemaining)
+                } else {
+                    Result.failure(Exception(body.message ?: "Failed to get verification status"))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Upload selfie image
      * Returns success status
      */

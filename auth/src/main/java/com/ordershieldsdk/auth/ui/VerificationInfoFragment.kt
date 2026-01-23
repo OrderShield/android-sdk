@@ -63,9 +63,22 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
                         // Store session info
                         SessionManager.setSession(sessionId, sessionToken)
                         
-                        // Hide loader and enable button
-                        showLoader(false)
-                        btnStartVerification.isEnabled = true
+                        // Step 3: Get verification status to get steps_remaining
+                        val statusResult = repository.getVerificationStatus()
+                        
+                        statusResult.onSuccess { stepsRemaining ->
+                            // Store steps_remaining
+                            SessionManager.setStepsRemaining(stepsRemaining)
+                            
+                            // Hide loader and enable button
+                            showLoader(false)
+                            btnStartVerification.isEnabled = true
+                        }.onFailure { exception ->
+                            // Handle error
+                            showLoader(false)
+                            btnStartVerification.isEnabled = true
+                            ErrorHandler.showError(requireContext(), exception)
+                        }
                     }.onFailure { exception ->
                         // Handle error
                         showLoader(false)

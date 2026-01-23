@@ -123,8 +123,8 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
 
         btnAcceptAndSign.setOnClickListener {
             if (areAllRequiredCheckboxesChecked()) {
-                // Check if signature is enabled
-                if (VerificationSettingsManager.isSignatureConfirmationEnabled()) {
+                // Check if signature is in required steps
+                if (VerificationSettingsManager.isSignatureStepRequired()) {
                     showSignatureDialog()
                 } else {
                     // No signature required, submit terms only

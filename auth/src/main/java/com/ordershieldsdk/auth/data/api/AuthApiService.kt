@@ -28,6 +28,7 @@ import com.ordershieldsdk.auth.data.model.VerifyPhoneCodeRequest
 import com.ordershieldsdk.auth.data.model.VerifyPhoneCodeResponse
 import com.ordershieldsdk.auth.data.model.VerificationSubmitRequest
 import com.ordershieldsdk.auth.data.model.VerificationSubmitResponse
+import com.ordershieldsdk.auth.data.model.VerificationStatusResponse
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -110,6 +111,16 @@ interface AuthApiService {
     suspend fun startVerification(
         @Body request: StartVerificationRequest
     ): Response<StartVerificationResponse>
+
+    /**
+     * Get verification status
+     * This endpoint returns the current status of the verification session including steps_remaining
+     */
+    @GET("api/sdk/verification/status")
+    suspend fun getVerificationStatus(
+        @Query("customer_id") customerId: String,
+        @Query("session_token") sessionToken: String
+    ): Response<VerificationStatusResponse>
 
     /**
      * Upload selfie image

@@ -511,3 +511,49 @@ data class UploadSignatureResponse(
     @SerializedName("statusCode")
     val statusCode: Int
 )
+
+/**
+ * Verification status response data
+ */
+data class VerificationStatusData(
+    @SerializedName("session_id")
+    val sessionId: String,
+    
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("steps_completed")
+    val stepsCompleted: List<String>?,
+    
+    @SerializedName("steps_remaining")
+    val stepsRemaining: List<String>?,
+    
+    @SerializedName("steps_optional")
+    val stepsOptional: List<String>?,
+    
+    @SerializedName("is_complete")
+    val isComplete: Boolean?,
+    
+    @SerializedName("expires_at")
+    val expiresAt: String?,
+    
+    @SerializedName("created_at")
+    val createdAt: String?
+)
+
+/**
+ * Verification status API response wrapper
+ */
+data class VerificationStatusResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: VerificationStatusData,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)

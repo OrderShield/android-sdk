@@ -91,4 +91,72 @@ internal object VerificationSettingsManager {
      * Check if settings are loaded
      */
     fun hasSettings(): Boolean = settings != null
+    
+    /**
+     * Get remaining steps list from session (preferred) or initial settings (fallback)
+     */
+    fun getRemainingSteps(): List<String> {
+        // Prefer steps from session (from verification/status API)
+        return SessionManager.getStepsRemaining() ?: (settings?.requiredSteps ?: emptyList())
+    }
+    
+    /**
+     * Get optional steps list from session (preferred) or initial settings (fallback)
+     */
+    fun getOptionalSteps(): List<String> {
+        // Prefer steps from session (from verification/status API)
+        return SessionManager.getStepsOptional() ?: (settings?.optionalSteps ?: emptyList())
+    }
+    
+    /**
+     * Check if a step is in remaining steps
+     * Uses steps_remaining from session (from verification/status API) if available
+     */
+    fun isStepRequired(step: String): Boolean {
+        // Prefer steps_remaining from session (from verification/status API)
+        return SessionManager.isStepRemaining(step) || 
+               (settings?.requiredSteps?.contains(step) == true)
+    }
+    
+    /**
+     * Check if selfie step is required
+     */
+    fun isSelfieStepRequired(): Boolean {
+        return isStepRequired("selfie")
+    }
+    
+    /**
+     * Check if userInfo step is required
+     */
+    fun isUserInfoStepRequired(): Boolean {
+        return isStepRequired("userInfo")
+    }
+    
+    /**
+     * Check if email step is required
+     */
+    fun isEmailStepRequired(): Boolean {
+        return isStepRequired("email")
+    }
+    
+    /**
+     * Check if SMS step is required
+     */
+    fun isSmsStepRequired(): Boolean {
+        return isStepRequired("sms")
+    }
+    
+    /**
+     * Check if terms step is required
+     */
+    fun isTermsStepRequired(): Boolean {
+        return isStepRequired("terms")
+    }
+    
+    /**
+     * Check if signature step is required
+     */
+    fun isSignatureStepRequired(): Boolean {
+        return isStepRequired("signature")
+    }
 }

@@ -33,12 +33,13 @@ object StepNavigator {
     
     /**
      * Get the next step based on current step and settings
+     * Uses steps_required array to determine which steps to show
      */
     fun getNextStep(currentStep: Step): Step? {
         return when (currentStep) {
             Step.INFO -> {
-                // After info, check if selfie is enabled
-                if (VerificationSettingsManager.isSelfieVerificationEnabled()) {
+                // After info, check if selfie is in required steps
+                if (VerificationSettingsManager.isSelfieStepRequired()) {
                     Step.SELFIE
                 } else {
                     getNextStep(Step.SELFIE) // Skip selfie, get next
@@ -46,8 +47,8 @@ object StepNavigator {
             }
             
             Step.SELFIE -> {
-                // After selfie, check if user info is enabled
-                if (VerificationSettingsManager.isUserInfoVerificationEnabled()) {
+                // After selfie, check if userInfo is in required steps
+                if (VerificationSettingsManager.isUserInfoStepRequired()) {
                     Step.USER_INFO
                 } else {
                     getNextStep(Step.USER_INFO) // Skip user info, get next
@@ -55,8 +56,8 @@ object StepNavigator {
             }
             
             Step.USER_INFO -> {
-                // After user info, check if email is enabled
-                if (VerificationSettingsManager.isEmailVerificationEnabled()) {
+                // After user info, check if email is in required steps
+                if (VerificationSettingsManager.isEmailStepRequired()) {
                     Step.EMAIL
                 } else {
                     getNextStep(Step.EMAIL) // Skip email, get next
@@ -64,8 +65,8 @@ object StepNavigator {
             }
             
             Step.EMAIL -> {
-                // After email (and OTP if required, handled inline), check if phone is enabled
-                if (VerificationSettingsManager.isSmsVerificationEnabled()) {
+                // After email (and OTP if required, handled inline), check if SMS is in required steps
+                if (VerificationSettingsManager.isSmsStepRequired()) {
                     Step.PHONE
                 } else {
                     getNextStep(Step.PHONE) // Skip phone, get next
@@ -73,9 +74,9 @@ object StepNavigator {
             }
             
             Step.PHONE -> {
-                // After phone (and OTP if required, handled inline), check if terms or signature is enabled
-                if (VerificationSettingsManager.isTermsAgreementEnabled() || 
-                    VerificationSettingsManager.isSignatureConfirmationEnabled()) {
+                // After phone (and OTP if required, handled inline), check if terms or signature is in required steps
+                if (VerificationSettingsManager.isTermsStepRequired() || 
+                    VerificationSettingsManager.isSignatureStepRequired()) {
                     Step.TERMS_SIGNATURE
                 } else {
                     Step.COMPLETE
@@ -111,29 +112,30 @@ object StepNavigator {
     
     /**
      * Check if a step should be shown
+     * Uses steps_required array to determine visibility
      */
     fun shouldShowStep(step: Step): Boolean {
         return when (step) {
             Step.INFO -> true // Always show
-            Step.SELFIE -> VerificationSettingsManager.isSelfieVerificationEnabled()
-            Step.USER_INFO -> VerificationSettingsManager.isUserInfoVerificationEnabled()
-            Step.EMAIL -> VerificationSettingsManager.isEmailVerificationEnabled()
-            Step.PHONE -> VerificationSettingsManager.isSmsVerificationEnabled()
-            Step.TERMS_SIGNATURE -> VerificationSettingsManager.isTermsAgreementEnabled() || 
-                                   VerificationSettingsManager.isSignatureConfirmationEnabled()
+            Step.SELFIE -> VerificationSettingsManager.isSelfieStepRequired()
+            Step.USER_INFO -> VerificationSettingsManager.isUserInfoStepRequired()
+            Step.EMAIL -> VerificationSettingsManager.isEmailStepRequired()
+            Step.PHONE -> VerificationSettingsManager.isSmsStepRequired()
+            Step.TERMS_SIGNATURE -> VerificationSettingsManager.isTermsStepRequired() || 
+                                   VerificationSettingsManager.isSignatureStepRequired()
             Step.COMPLETE -> true // Always show at the end
         }
     }
     
     /**
      * Get button text for Terms/Signature screen
-     * Depends on whether signature is enabled
+     * Depends on whether signature is in required steps
      */
     fun getTermsSignatureButtonText(): String {
-        return if (VerificationSettingsManager.isSignatureConfirmationEnabled()) {
-            "Accept and Sign" // Or whatever the current text is
+        return if (VerificationSettingsManager.isSignatureStepRequired()) {
+            "Accept and Sign"
         } else {
-            "Accept and Continue" // Or appropriate text when no signature
+            "Accept and Continue"
         }
     }
 }

@@ -15,6 +15,12 @@ internal object SessionManager {
     @Volatile
     private var sessionToken: String? = null
     
+    @Volatile
+    private var stepsRemaining: List<String>? = null
+    
+    @Volatile
+    private var stepsOptional: List<String>? = null
+    
     /**
      * Store customer ID
      */
@@ -36,6 +42,13 @@ internal object SessionManager {
     }
     
     /**
+     * Store steps remaining from verification status
+     */
+    fun setStepsRemaining(stepsRemaining: List<String>?) {
+        this.stepsRemaining = stepsRemaining
+    }
+    
+    /**
      * Get session ID
      */
     fun getSessionId(): String? = sessionId
@@ -46,6 +59,23 @@ internal object SessionManager {
     fun getSessionToken(): String? = sessionToken
     
     /**
+     * Get remaining steps for this session
+     */
+    fun getStepsRemaining(): List<String>? = stepsRemaining
+    
+    /**
+     * Get optional steps for this session
+     */
+    fun getStepsOptional(): List<String>? = stepsOptional
+    
+    /**
+     * Check if a step is in remaining steps
+     */
+    fun isStepRemaining(step: String): Boolean {
+        return stepsRemaining?.contains(step) == true
+    }
+    
+    /**
      * Clear all session data
      * Call this when verification completes or is cancelled
      */
@@ -53,6 +83,8 @@ internal object SessionManager {
         customerId = null
         sessionId = null
         sessionToken = null
+        stepsRemaining = null
+        stepsOptional = null
     }
     
     /**
