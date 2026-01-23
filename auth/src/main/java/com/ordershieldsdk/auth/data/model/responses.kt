@@ -114,3 +114,95 @@ data class VerificationSettingsResponse(
     @SerializedName("status")
     val status: String
 )
+
+/**
+ * Register device response data
+ */
+data class RegisterDeviceData(
+    @SerializedName("success")
+    val success: Boolean,
+    
+    @SerializedName("customer_id")
+    val customerId: String?,
+    
+    @SerializedName("is_new_customer")
+    val isNewCustomer: Boolean?,
+    
+    @SerializedName("is_banned")
+    val isBanned: Boolean?,
+    
+    @SerializedName("error")
+    val error: String?,
+    
+    @SerializedName("ban_reason")
+    val banReason: String?,
+    
+    @SerializedName("banned_at")
+    val bannedAt: String?,
+    
+    @SerializedName("contact")
+    val contact: String?
+)
+
+/**
+ * Register device API response wrapper
+ */
+data class RegisterDeviceResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: RegisterDeviceData,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * Start verification response data
+ */
+data class StartVerificationData(
+    @SerializedName("session_id")
+    val sessionId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("steps_required")
+    val stepsRequired: List<String>?,
+    
+    @SerializedName("steps_optional")
+    val stepsOptional: List<String>?,
+    
+    @SerializedName("expires_at")
+    val expiresAt: String?,
+    
+    @SerializedName("created_at")
+    val createdAt: String?
+)
+
+/**
+ * Start verification API response wrapper
+ */
+data class StartVerificationResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: StartVerificationData,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)

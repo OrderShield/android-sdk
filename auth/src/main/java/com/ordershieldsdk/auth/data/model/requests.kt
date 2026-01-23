@@ -55,3 +55,40 @@ data class VerificationSubmitRequest(
     @SerializedName("termsAccepted")
     val termsAccepted: Boolean
 )
+
+/**
+ * Request model for device registration
+ */
+data class RegisterDeviceRequest(
+    @SerializedName("device_id")
+    val deviceId: String,
+    
+    @SerializedName("device_type")
+    val deviceType: String,
+    
+    @SerializedName("device_model")
+    val deviceModel: String,
+    
+    @SerializedName("os_version")
+    val osVersion: String,
+    
+    @SerializedName("app_version")
+    val appVersion: String,
+    
+    @SerializedName("ip_address")
+    val ipAddress: String,
+    
+    @SerializedName("user_agent")
+    val userAgent: String,
+    
+    @SerializedName("timezone")
+    val timezone: String
+)
+
+/**
+ * Request model for starting verification
+ */
+data class StartVerificationRequest(
+    @SerializedName("customer_id")
+    val customerId: String
+)

@@ -188,4 +188,67 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+    /**
+     * Register device
+     * Returns customer_id on success
+     */
+    suspend fun registerDevice(request: com.ordershieldsdk.auth.data.model.RegisterDeviceRequest): Result<String> {
+        return try {
+            val response = apiService.registerDevice(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success" && body.data.success) {
+                    body.data.customerId?.let { customerId ->
+                        Result.success(customerId)
+                    } ?: Result.failure(Exception(body.data.error ?: "Customer ID not found in response"))
+                } else {
+                    Result.failure(Exception(body.data.error ?: body.message ?: "Failed to register device"))
+                }
+            } else {
+                Result.failure(
+                    Exception(
+                        response.body()?.message 
+                            ?: response.message() 
+                            ?: "Unknown error occurred"
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Start verification session
+     * Returns Pair of session_id and session_token on success
+     */
+    suspend fun startVerification(customerId: String): Result<Pair<String, String>> {
+        return try {
+            val request = com.ordershieldsdk.auth.data.model.StartVerificationRequest(customerId = customerId)
+            val response = apiService.startVerification(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    val sessionId = body.data.sessionId
+                    val sessionToken = body.data.sessionToken
+                    Result.success(Pair(sessionId, sessionToken))
+                } else {
+                    Result.failure(Exception(body.message ?: "Failed to start verification"))
+                }
+            } else {
+                Result.failure(
+                    Exception(
+                        response.body()?.message 
+                            ?: response.message() 
+                            ?: "Unknown error occurred"
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

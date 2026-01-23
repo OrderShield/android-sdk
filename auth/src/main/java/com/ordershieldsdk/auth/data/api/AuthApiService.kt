@@ -2,8 +2,12 @@ package com.ordershieldsdk.auth.data.api
 
 import com.ordershieldsdk.auth.data.model.ApiResponse
 import com.ordershieldsdk.auth.data.model.ImageUploadResponse
+import com.ordershieldsdk.auth.data.model.RegisterDeviceRequest
+import com.ordershieldsdk.auth.data.model.RegisterDeviceResponse
 import com.ordershieldsdk.auth.data.model.SendOtpRequest
 import com.ordershieldsdk.auth.data.model.SendOtpResponse
+import com.ordershieldsdk.auth.data.model.StartVerificationRequest
+import com.ordershieldsdk.auth.data.model.StartVerificationResponse
 import com.ordershieldsdk.auth.data.model.VerificationSettingsResponse
 import com.ordershieldsdk.auth.data.model.VerifyOtpRequest
 import com.ordershieldsdk.auth.data.model.VerifyOtpResponse
@@ -73,4 +77,22 @@ interface AuthApiService {
      */
     @GET("api/sdk/verification-settings")
     suspend fun getVerificationSettings(): Response<VerificationSettingsResponse>
+
+    /**
+     * Register device
+     * This endpoint registers the device and returns customer_id
+     */
+    @POST("api/sdk/register-device")
+    suspend fun registerDevice(
+        @Body request: RegisterDeviceRequest
+    ): Response<RegisterDeviceResponse>
+
+    /**
+     * Start verification session
+     * This endpoint starts a verification session and returns session_id and session_token
+     */
+    @POST("api/sdk/verification/start")
+    suspend fun startVerification(
+        @Body request: StartVerificationRequest
+    ): Response<StartVerificationResponse>
 }

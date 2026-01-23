@@ -4,26 +4,90 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.DeviceInfoHelper
+import com.ordershieldsdk.auth.core.SessionManager
+import com.ordershieldsdk.auth.data.repository.AuthRepository
+import kotlinx.coroutines.launch
 
 class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
 
     private lateinit var btnStartVerification: MaterialButton
+    private lateinit var loadingOverlay: FrameLayout
     private var backPressedCallback: OnBackPressedCallback? = null
+    private val repository = AuthRepository()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         initViews(view)
-        setupClickListeners()
         handleEdgeToEdge(view)
         lockScreen()
+        
+        // Call APIs when fragment is shown
+        initializeVerification()
+        
+        setupClickListeners()
+    }
+    
+    private fun initializeVerification() {
+        // Show loader
+        showLoader(true)
+        
+        // Disable button until APIs complete
+        btnStartVerification.isEnabled = false
+        
+        lifecycleScope.launch {
+            try {
+                // Step 1: Register device
+                val deviceInfo = DeviceInfoHelper.getDeviceInfo(requireContext())
+                val registerResult = repository.registerDevice(deviceInfo)
+                
+                registerResult.onSuccess { customerId ->
+                    // Store customer ID
+                    SessionManager.setCustomerId(customerId)
+                    
+                    // Step 2: Start verification
+                    val startResult = repository.startVerification(customerId)
+                    
+                    startResult.onSuccess { (sessionId, sessionToken) ->
+                        // Store session info
+                        SessionManager.setSession(sessionId, sessionToken)
+                        
+                        // Hide loader and enable button
+                        showLoader(false)
+                        btnStartVerification.isEnabled = true
+                    }.onFailure { exception ->
+                        // Handle error
+                        showLoader(false)
+                        btnStartVerification.isEnabled = true
+                        // TODO: Show error message to user
+                    }
+                }.onFailure { exception ->
+                    // Handle error
+                    showLoader(false)
+                    btnStartVerification.isEnabled = true
+                    // TODO: Show error message to user
+                }
+            } catch (e: Exception) {
+                // Handle exception
+                showLoader(false)
+                btnStartVerification.isEnabled = true
+                // TODO: Show error message to user
+            }
+        }
+    }
+    
+    private fun showLoader(show: Boolean) {
+        loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
     }
     
     private fun lockScreen() {
@@ -57,6 +121,7 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
 
     private fun initViews(view: View) {
         btnStartVerification = view.findViewById(R.id.btnStartVerification)
+        loadingOverlay = view.findViewById(R.id.loadingOverlay)
         
         // Enforce black theme on button to prevent app module overrides
         enforceBlackThemeOnButton(btnStartVerification)
