@@ -10,35 +10,44 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.CheckBox
+import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.github.gcacace.signaturepad.views.SignaturePad
 import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
+import com.ordershieldsdk.auth.data.model.TermsCheckbox
+import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
+import kotlinx.coroutines.launch
 
 class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
 
-    private lateinit var checkbox1: CheckBox
-    private lateinit var checkbox2: CheckBox
-    private lateinit var checkbox3: CheckBox
+    private lateinit var checkboxesContainer: LinearLayout
     private lateinit var btnAcceptAndSign: MaterialButton
+    private lateinit var loadingOverlay: FrameLayout
+    
+    private val repository = AuthRepository()
+    private val checkboxes = mutableListOf<CheckBox>()
+    private val checkboxData = mutableListOf<TermsCheckbox>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         initViews(view)
-        setupClickListeners()
+        fetchTermsCheckboxes()
     }
 
     private fun initViews(view: View) {
-        checkbox1 = view.findViewById(R.id.checkbox1)
-        checkbox2 = view.findViewById(R.id.checkbox2)
-        checkbox3 = view.findViewById(R.id.checkbox3)
+        checkboxesContainer = view.findViewById(R.id.checkboxesContainer)
         btnAcceptAndSign = view.findViewById(R.id.btnAcceptAndSign)
+        loadingOverlay = view.findViewById(R.id.loadingOverlay)
 
         // Set button text based on signature setting
         val buttonText = StepNavigator.getTermsSignatureButtonText()
@@ -50,16 +59,66 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
         )
         btnAcceptAndSign.setTextColor(resources.getColor(R.color.gray_light, null))
     }
+    
+    private fun fetchTermsCheckboxes() {
+        // Show loader
+        showLoader(true)
+        
+        lifecycleScope.launch {
+            try {
+                val result = repository.getTermsCheckboxes()
+                
+                result.onSuccess { checkboxesList ->
+                    showLoader(false)
+                    checkboxData.clear()
+                    checkboxData.addAll(checkboxesList)
+                    createCheckboxes()
+                    setupClickListeners()
+                }.onFailure { exception ->
+                    showLoader(false)
+                    ErrorHandler.showError(requireContext(), exception)
+                    // On error, still allow user to proceed (fallback)
+                    setupClickListeners()
+                }
+            } catch (e: Exception) {
+                showLoader(false)
+                ErrorHandler.showError(requireContext(), e)
+                setupClickListeners()
+            }
+        }
+    }
+    
+    private fun createCheckboxes() {
+        checkboxesContainer.removeAllViews()
+        checkboxes.clear()
+        
+        checkboxData.forEach { checkboxItem ->
+            val checkboxLayout = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_terms_checkbox, checkboxesContainer, false) as LinearLayout
+            
+            val checkbox = checkboxLayout.findViewById<CheckBox>(R.id.checkbox)
+            val textView = checkboxLayout.findViewById<TextView>(R.id.checkboxText)
+            
+            // Set checkbox text
+            textView.text = checkboxItem.checkboxText
+            
+            // Store checkbox and data
+            checkbox.tag = checkboxItem.id
+            checkboxes.add(checkbox)
+            
+            // Add to container
+            checkboxesContainer.addView(checkboxLayout)
+        }
+    }
 
     private fun setupClickListeners() {
-        val checkboxListener = { _: View -> checkValidation() }
-        
-        checkbox1.setOnCheckedChangeListener { _, _ -> checkValidation() }
-        checkbox2.setOnCheckedChangeListener { _, _ -> checkValidation() }
-        checkbox3.setOnCheckedChangeListener { _, _ -> checkValidation() }
+        // Set up listeners for all checkboxes
+        checkboxes.forEach { checkbox ->
+            checkbox.setOnCheckedChangeListener { _, _ -> checkValidation() }
+        }
 
         btnAcceptAndSign.setOnClickListener {
-            if (areAllCheckboxesChecked()) {
+            if (areAllRequiredCheckboxesChecked()) {
                 // Check if signature is enabled
                 if (VerificationSettingsManager.isSignatureConfirmationEnabled()) {
                     showSignatureDialog()
@@ -72,10 +131,10 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
     }
 
     private fun checkValidation() {
-        val allChecked = areAllCheckboxesChecked()
-        btnAcceptAndSign.isEnabled = allChecked
+        val allRequiredChecked = areAllRequiredCheckboxesChecked()
+        btnAcceptAndSign.isEnabled = allRequiredChecked
         
-        if (allChecked) {
+        if (allRequiredChecked) {
             btnAcceptAndSign.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
             btnAcceptAndSign.setTextColor(Color.WHITE)
         } else {
@@ -86,8 +145,20 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
         }
     }
 
-    private fun areAllCheckboxesChecked(): Boolean {
-        return checkbox1.isChecked && checkbox2.isChecked && checkbox3.isChecked
+    private fun areAllRequiredCheckboxesChecked(): Boolean {
+        if (checkboxData.isEmpty()) {
+            // If no checkboxes loaded, allow proceeding (fallback)
+            return true
+        }
+        
+        // Check only required checkboxes
+        return checkboxData.zip(checkboxes).all { (data, checkbox) ->
+            !data.isRequired || checkbox.isChecked
+        }
+    }
+    
+    private fun showLoader(show: Boolean) {
+        loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun showSignatureDialog() {

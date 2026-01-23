@@ -4,16 +4,25 @@ import com.ordershieldsdk.auth.data.model.ApiResponse
 import com.ordershieldsdk.auth.data.model.ImageUploadResponse
 import com.ordershieldsdk.auth.data.model.RegisterDeviceRequest
 import com.ordershieldsdk.auth.data.model.RegisterDeviceResponse
+import com.ordershieldsdk.auth.data.model.SendEmailCodeRequest
+import com.ordershieldsdk.auth.data.model.SendEmailCodeResponse
 import com.ordershieldsdk.auth.data.model.SendOtpRequest
 import com.ordershieldsdk.auth.data.model.SendOtpResponse
+import com.ordershieldsdk.auth.data.model.SendPhoneCodeRequest
+import com.ordershieldsdk.auth.data.model.SendPhoneCodeResponse
 import com.ordershieldsdk.auth.data.model.SelfieUploadResponse
 import com.ordershieldsdk.auth.data.model.StartVerificationRequest
 import com.ordershieldsdk.auth.data.model.StartVerificationResponse
+import com.ordershieldsdk.auth.data.model.TermsCheckboxesResponse
 import com.ordershieldsdk.auth.data.model.UserInfoRequest
 import com.ordershieldsdk.auth.data.model.UserInfoUploadResponse
 import com.ordershieldsdk.auth.data.model.VerificationSettingsResponse
+import com.ordershieldsdk.auth.data.model.VerifyEmailCodeRequest
+import com.ordershieldsdk.auth.data.model.VerifyEmailCodeResponse
 import com.ordershieldsdk.auth.data.model.VerifyOtpRequest
 import com.ordershieldsdk.auth.data.model.VerifyOtpResponse
+import com.ordershieldsdk.auth.data.model.VerifyPhoneCodeRequest
+import com.ordershieldsdk.auth.data.model.VerifyPhoneCodeResponse
 import com.ordershieldsdk.auth.data.model.VerificationSubmitRequest
 import com.ordershieldsdk.auth.data.model.VerificationSubmitResponse
 import retrofit2.Response
@@ -120,4 +129,47 @@ interface AuthApiService {
     suspend fun submitUserInfo(
         @Body request: UserInfoRequest
     ): Response<UserInfoUploadResponse>
+
+    /**
+     * Send email verification code
+     * POST with customer_id, session_token, email
+     */
+    @POST("api/sdk/verification/email/send-code")
+    suspend fun sendEmailCode(
+        @Body request: SendEmailCodeRequest
+    ): Response<SendEmailCodeResponse>
+
+    /**
+     * Verify email verification code
+     * POST with customer_id, session_token, email, verification_code
+     */
+    @POST("api/sdk/verification/email/verify-code")
+    suspend fun verifyEmailCode(
+        @Body request: VerifyEmailCodeRequest
+    ): Response<VerifyEmailCodeResponse>
+
+    /**
+     * Send phone verification code
+     * POST with customer_id, session_token, phone_number
+     */
+    @POST("api/sdk/verification/phone/send-code")
+    suspend fun sendPhoneCode(
+        @Body request: SendPhoneCodeRequest
+    ): Response<SendPhoneCodeResponse>
+
+    /**
+     * Verify phone verification code
+     * POST with customer_id, session_token, phone_number, verification_code
+     */
+    @POST("api/sdk/verification/phone/verify-code")
+    suspend fun verifyPhoneCode(
+        @Body request: VerifyPhoneCodeRequest
+    ): Response<VerifyPhoneCodeResponse>
+
+    /**
+     * Get terms and conditions checkboxes
+     * Returns list of checkboxes with text, required status, and display order
+     */
+    @GET("api/sdk/terms-checkboxes")
+    suspend fun getTermsCheckboxes(): Response<TermsCheckboxesResponse>
 }

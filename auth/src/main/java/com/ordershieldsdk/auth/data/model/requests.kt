@@ -112,3 +112,65 @@ data class UserInfoRequest(
     @SerializedName("date_of_birth")
     val dateOfBirth: String
 )
+
+/**
+ * Request model for sending email verification code
+ */
+data class SendEmailCodeRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("email")
+    val email: String
+)
+
+/**
+ * Request model for verifying email verification code
+ */
+data class VerifyEmailCodeRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("email")
+    val email: String,
+    
+    @SerializedName("verification_code")
+    val verificationCode: String
+)
+
+/**
+ * Request model for sending phone verification code
+ */
+data class SendPhoneCodeRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("phone_number")
+    val phoneNumber: String
+)
+
+/**
+ * Request model for verifying phone verification code
+ */
+data class VerifyPhoneCodeRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("phone_number")
+    val phoneNumber: String,
+    
+    @SerializedName("verification_code")
+    val verificationCode: String
+)

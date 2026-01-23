@@ -291,3 +291,161 @@ data class UserInfoUploadResponse(
     @SerializedName("statusCode")
     val statusCode: Int
 )
+
+/**
+ * Send email code response data
+ */
+data class SendEmailCodeData(
+    @SerializedName("code_sent")
+    val codeSent: Boolean?,
+    
+    @SerializedName("message")
+    val message: String?
+)
+
+/**
+ * Send email code API response wrapper
+ */
+data class SendEmailCodeResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: SendEmailCodeData?,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * Verify email code response data
+ */
+data class VerifyEmailCodeData(
+    @SerializedName("verified")
+    val verified: Boolean?,
+    
+    @SerializedName("message")
+    val message: String?
+)
+
+/**
+ * Verify email code API response wrapper
+ */
+data class VerifyEmailCodeResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: VerifyEmailCodeData?,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * Send phone code response data
+ */
+data class SendPhoneCodeData(
+    @SerializedName("code_sent")
+    val codeSent: Boolean?,
+    
+    @SerializedName("message")
+    val message: String?
+)
+
+/**
+ * Send phone code API response wrapper
+ */
+data class SendPhoneCodeResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: SendPhoneCodeData?,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * Verify phone code response data
+ */
+data class VerifyPhoneCodeData(
+    @SerializedName("verified")
+    val verified: Boolean?,
+    
+    @SerializedName("message")
+    val message: String?
+)
+
+/**
+ * Verify phone code API response wrapper
+ */
+data class VerifyPhoneCodeResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: VerifyPhoneCodeData?,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * Terms checkbox item
+ */
+data class TermsCheckbox(
+    @SerializedName("id")
+    val id: String,
+    
+    @SerializedName("checkboxText")
+    val checkboxText: String,
+    
+    @SerializedName("isRequired")
+    val isRequired: Boolean,
+    
+    @SerializedName("displayOrder")
+    val displayOrder: Int
+)
+
+/**
+ * Terms checkboxes API response wrapper
+ */
+data class TermsCheckboxesResponse(
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: List<TermsCheckbox>,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int,
+    
+    @SerializedName("status")
+    val status: String
+)

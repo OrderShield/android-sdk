@@ -376,4 +376,232 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+    /**
+     * Send email verification code
+     * Returns success status
+     */
+    suspend fun sendEmailCode(email: String): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.SendEmailCodeRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                email = email
+            )
+            
+            val response = apiService.sendEmailCode(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data?.message
+                        ?: "Failed to send email verification code"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Verify email verification code
+     * Returns success status
+     */
+    suspend fun verifyEmailCode(email: String, verificationCode: String): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.VerifyEmailCodeRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                email = email,
+                verificationCode = verificationCode
+            )
+            
+            val response = apiService.verifyEmailCode(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data?.message
+                        ?: "Failed to verify email code"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Send phone verification code
+     * Returns success status
+     */
+    suspend fun sendPhoneCode(phoneNumber: String): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.SendPhoneCodeRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                phoneNumber = phoneNumber
+            )
+            
+            val response = apiService.sendPhoneCode(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data?.message
+                        ?: "Failed to send phone verification code"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Verify phone verification code
+     * Returns success status
+     */
+    suspend fun verifyPhoneCode(phoneNumber: String, verificationCode: String): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.VerifyPhoneCodeRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                phoneNumber = phoneNumber,
+                verificationCode = verificationCode
+            )
+            
+            val response = apiService.verifyPhoneCode(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data?.message
+                        ?: "Failed to verify phone code"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get terms and conditions checkboxes
+     * Returns list of checkboxes sorted by displayOrder
+     */
+    suspend fun getTermsCheckboxes(): Result<List<com.ordershieldsdk.auth.data.model.TermsCheckbox>> {
+        return try {
+            val response = apiService.getTermsCheckboxes()
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    // Sort by displayOrder
+                    val sortedCheckboxes = body.data.sortedBy { it.displayOrder }
+                    Result.success(sortedCheckboxes)
+                } else {
+                    Result.failure(Exception(body.message ?: "Failed to fetch terms checkboxes"))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -12,11 +12,15 @@ import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
+import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
+import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
 class EmailFragment : Fragment(R.layout.fragment_email) {
@@ -28,6 +32,8 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
     
     private var isOtpSent = false
     private var isOtpVerified = false
+    private var isVerifyingOtp = false
+    private val repository = AuthRepository()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -111,13 +117,20 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val code = s?.toString()?.trim() ?: ""
                 val isValid = code.length == 6
-                btnGetOtp.isEnabled = isValid
-                updateButtonAppearance(isValid)
                 
-                if (code.length == 6) {
-                    verifyOtp(code)
-                } else {
+                // Only enable button if code is 6 digits and not already verifying
+                if (isValid && !isVerifyingOtp) {
+                    btnGetOtp.isEnabled = true
+                    updateButtonAppearance(true)
+                } else if (!isValid) {
+                    btnGetOtp.isEnabled = false
+                    updateButtonAppearance(false)
                     isOtpVerified = false
+                }
+                
+                // Auto-verify when 6 digits are entered
+                if (code.length == 6 && !isVerifyingOtp) {
+                    verifyOtp(code)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -163,24 +176,104 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
     }
     
     private fun sendOtp() {
-        // TODO: Call API to send OTP
-        isOtpSent = true
-        otpSection.visibility = View.VISIBLE
-        btnGetOtp.text = "Verify"
+        val email = getEmail()
+        if (email.isEmpty() || !isEmailValid()) {
+            return
+        }
+        
+        // Disable button while sending
         btnGetOtp.isEnabled = false
         updateButtonAppearance(false)
-        etVerificationCode.requestFocus()
+        
+        lifecycleScope.launch {
+            try {
+                val result = repository.sendEmailCode(email)
+                
+                result.onSuccess { success ->
+                    if (success) {
+                        // OTP sent successfully
+                        isOtpSent = true
+                        otpSection.visibility = View.VISIBLE
+                        btnGetOtp.text = "Verify"
+                        btnGetOtp.isEnabled = false
+                        updateButtonAppearance(false)
+                        etVerificationCode.requestFocus()
+                    } else {
+                        // Failed to send OTP
+                        btnGetOtp.isEnabled = true
+                        updateButtonAppearance(true)
+                        ErrorHandler.showError(requireContext(), "Failed to send verification code. Please try again.")
+                    }
+                }.onFailure { exception ->
+                    // Handle error
+                    btnGetOtp.isEnabled = true
+                    updateButtonAppearance(true)
+                    ErrorHandler.showError(requireContext(), exception)
+                }
+            } catch (e: Exception) {
+                btnGetOtp.isEnabled = true
+                updateButtonAppearance(true)
+                ErrorHandler.showError(requireContext(), e)
+            }
+        }
     }
     
     private fun verifyOtp(code: String) {
-        // TODO: Call API to verify OTP
-        if (code.length == 6) {
-            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-            imm.hideSoftInputFromWindow(etVerificationCode.windowToken, 0)
-            
-            isOtpVerified = true
+        if (code.length != 6 || isVerifyingOtp) {
+            return
+        }
+        
+        isVerifyingOtp = true
+        btnGetOtp.isEnabled = false
+        updateButtonAppearance(false)
+        
+        val email = getEmail()
+        if (email.isEmpty()) {
+            isVerifyingOtp = false
             btnGetOtp.isEnabled = true
             updateButtonAppearance(true)
+            return
+        }
+        
+        // Hide keyboard
+        val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(etVerificationCode.windowToken, 0)
+        
+        lifecycleScope.launch {
+            try {
+                val result = repository.verifyEmailCode(email, code)
+                
+                result.onSuccess { success ->
+                    isVerifyingOtp = false
+                    if (success) {
+                        // OTP verified successfully
+                        isOtpVerified = true
+                        btnGetOtp.isEnabled = true
+                        updateButtonAppearance(true)
+                    } else {
+                        // Verification failed
+                        btnGetOtp.isEnabled = true
+                        updateButtonAppearance(true)
+                        ErrorHandler.showError(requireContext(), "Invalid verification code. Please try again.")
+                        // Clear the OTP field
+                        etVerificationCode.setText("")
+                    }
+                }.onFailure { exception ->
+                    // Handle error
+                    isVerifyingOtp = false
+                    btnGetOtp.isEnabled = true
+                    updateButtonAppearance(true)
+                    ErrorHandler.showError(requireContext(), exception)
+                    // Clear the OTP field on error
+                    etVerificationCode.setText("")
+                }
+            } catch (e: Exception) {
+                isVerifyingOtp = false
+                btnGetOtp.isEnabled = true
+                updateButtonAppearance(true)
+                ErrorHandler.showError(requireContext(), e)
+                etVerificationCode.setText("")
+            }
         }
     }
     
