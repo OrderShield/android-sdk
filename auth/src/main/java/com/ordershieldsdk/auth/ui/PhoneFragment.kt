@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.CountryCodeHelper
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
@@ -122,7 +123,19 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
         
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCountryCode.adapter = adapter
-        spinnerCountryCode.setSelection(0) // Default to +1
+        
+        // Auto-select country code based on user's location
+        val detectedPhoneCode = CountryCodeHelper.detectPhoneCountryCode(requireContext())
+        val defaultSelectionIndex = if (detectedPhoneCode != null) {
+            // Find the index of detected country code in the list
+            countryCodes.indexOf(detectedPhoneCode).takeIf { it >= 0 } ?: 0
+        } else {
+            // Default to +1 if detection fails
+            0
+        }
+        
+        spinnerCountryCode.setSelection(defaultSelectionIndex)
+        selectedCountryCode = countryCodes[defaultSelectionIndex]
         
         spinnerCountryCode.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {

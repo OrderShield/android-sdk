@@ -114,8 +114,7 @@ internal object VerificationSettingsManager {
      */
     fun isStepRequired(step: String): Boolean {
         // Prefer steps_remaining from session (from verification/status API)
-        return SessionManager.isStepRemaining(step) || 
-               (settings?.requiredSteps?.contains(step) == true)
+        return SessionManager.isStepRemaining(step)
     }
     
     /**

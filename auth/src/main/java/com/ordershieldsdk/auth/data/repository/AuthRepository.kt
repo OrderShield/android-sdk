@@ -194,9 +194,10 @@ class AuthRepository {
      * Register device
      * Returns customer_id on success
      */
-    suspend fun registerDevice(request: com.ordershieldsdk.auth.data.model.RegisterDeviceRequest): Result<String> {
+    suspend fun registerDevice(request: RegisterDeviceRequest): Result<String> {
         return try {
             val response = apiService.registerDevice(request)
+            print("registerDevice: $response")
             
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
