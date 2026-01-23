@@ -604,4 +604,114 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+    /**
+     * Submit terms acceptance
+     * Returns success status
+     */
+    suspend fun submitTerms(acceptedCheckboxes: List<com.ordershieldsdk.auth.data.model.AcceptedCheckbox>): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.SubmitTermsRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                acceptedCheckboxes = acceptedCheckboxes
+            )
+            
+            val response = apiService.submitTerms(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data?.verificationSession?.let { "Verification failed" }
+                        ?: "Failed to submit terms"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Upload signature image
+     * Returns success status
+     */
+    suspend fun uploadSignature(imageFile: File): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            // Determine image format from file extension
+            val imageFormat = when {
+                imageFile.name.endsWith(".jpg", ignoreCase = true) || 
+                imageFile.name.endsWith(".jpeg", ignoreCase = true) -> "jpg"
+                imageFile.name.endsWith(".png", ignoreCase = true) -> "png"
+                else -> "png" // Default to png for signature
+            }
+            
+            // Create multipart form data
+            val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+            val signatureImagePart = MultipartBody.Part.createFormData("signature_image", imageFile.name, requestFile)
+            val customerIdPart = customerId.toRequestBody("text/plain".toMediaTypeOrNull())
+            val sessionTokenPart = sessionToken.toRequestBody("text/plain".toMediaTypeOrNull())
+            val imageFormatPart = imageFormat.toRequestBody("text/plain".toMediaTypeOrNull())
+            
+            val response = apiService.uploadSignature(
+                signatureImage = signatureImagePart,
+                customerId = customerIdPart,
+                sessionToken = sessionTokenPart,
+                imageFormat = imageFormatPart
+            )
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(true)
+                } else {
+                    val errorMessage = body.message 
+                        ?: body.data?.verificationSession?.let { "Verification failed" }
+                        ?: "Failed to upload signature"
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

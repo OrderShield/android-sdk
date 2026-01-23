@@ -13,7 +13,10 @@ import com.ordershieldsdk.auth.data.model.SendPhoneCodeResponse
 import com.ordershieldsdk.auth.data.model.SelfieUploadResponse
 import com.ordershieldsdk.auth.data.model.StartVerificationRequest
 import com.ordershieldsdk.auth.data.model.StartVerificationResponse
+import com.ordershieldsdk.auth.data.model.SubmitTermsRequest
+import com.ordershieldsdk.auth.data.model.SubmitTermsResponse
 import com.ordershieldsdk.auth.data.model.TermsCheckboxesResponse
+import com.ordershieldsdk.auth.data.model.UploadSignatureResponse
 import com.ordershieldsdk.auth.data.model.UserInfoRequest
 import com.ordershieldsdk.auth.data.model.UserInfoUploadResponse
 import com.ordershieldsdk.auth.data.model.VerificationSettingsResponse
@@ -172,4 +175,26 @@ interface AuthApiService {
      */
     @GET("api/sdk/terms-checkboxes")
     suspend fun getTermsCheckboxes(): Response<TermsCheckboxesResponse>
+
+    /**
+     * Submit terms acceptance
+     * POST with customer_id, session_token, accepted_checkboxes
+     */
+    @POST("api/sdk/verification/terms")
+    suspend fun submitTerms(
+        @Body request: SubmitTermsRequest
+    ): Response<SubmitTermsResponse>
+
+    /**
+     * Upload signature image
+     * Multipart form data with signature_image, customer_id, session_token, image_format
+     */
+    @Multipart
+    @POST("api/sdk/verification/signature")
+    suspend fun uploadSignature(
+        @Part signatureImage: okhttp3.MultipartBody.Part,
+        @Part("customer_id") customerId: okhttp3.RequestBody,
+        @Part("session_token") sessionToken: okhttp3.RequestBody,
+        @Part("image_format") imageFormat: okhttp3.RequestBody
+    ): Response<UploadSignatureResponse>
 }

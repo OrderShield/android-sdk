@@ -449,3 +449,65 @@ data class TermsCheckboxesResponse(
     @SerializedName("status")
     val status: String
 )
+
+/**
+ * Submit terms response data
+ */
+data class SubmitTermsData(
+    @SerializedName("step_completed")
+    val stepCompleted: String?,
+    
+    @SerializedName("verification_session")
+    val verificationSession: VerificationSession?
+)
+
+/**
+ * Submit terms API response wrapper
+ */
+data class SubmitTermsResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: SubmitTermsData?,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
+ * Upload signature response data
+ */
+data class UploadSignatureData(
+    @SerializedName("step_completed")
+    val stepCompleted: String?,
+    
+    @SerializedName("verification_session")
+    val verificationSession: VerificationSession?
+)
+
+/**
+ * Upload signature API response wrapper
+ */
+data class UploadSignatureResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: UploadSignatureData?,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)

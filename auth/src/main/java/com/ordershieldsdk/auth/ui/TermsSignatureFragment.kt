@@ -1,6 +1,7 @@
 package com.ordershieldsdk.auth.ui
 
 import android.app.Dialog
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
@@ -22,10 +23,13 @@ import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
+import com.ordershieldsdk.auth.data.model.AcceptedCheckbox
 import com.ordershieldsdk.auth.data.model.TermsCheckbox
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
 
@@ -123,8 +127,8 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
                 if (VerificationSettingsManager.isSignatureConfirmationEnabled()) {
                     showSignatureDialog()
                 } else {
-                    // No signature required, navigate directly to next step
-                    navigateToNextStep()
+                    // No signature required, submit terms only
+                    submitTerms()
                 }
             }
         }
@@ -151,21 +155,127 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
             return true
         }
         
-        // Check only required checkboxes
-        return checkboxData.zip(checkboxes).all { (data, checkbox) ->
-            !data.isRequired || checkbox.isChecked
-        }
+        // All checkboxes must be checked
+        return checkboxes.all { it.isChecked }
     }
     
     private fun showLoader(show: Boolean) {
         loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
     }
 
+    private fun submitTerms() {
+        // Show loader
+        showLoader(true)
+        
+        // Prepare accepted checkboxes
+        val acceptedCheckboxes = checkboxData.map { checkboxItem ->
+            val checkbox = checkboxes.find { it.tag == checkboxItem.id }
+            AcceptedCheckbox(
+                checkboxId = checkboxItem.id,
+                accepted = checkbox?.isChecked ?: false
+            )
+        }
+        
+        lifecycleScope.launch {
+            try {
+                val result = repository.submitTerms(acceptedCheckboxes)
+                
+                result.onSuccess { success ->
+                    if (success) {
+                        // Terms submitted successfully, navigate to next step
+                        showLoader(false)
+                        navigateToNextStep()
+                    } else {
+                        showLoader(false)
+                        ErrorHandler.showError(requireContext(), "Failed to submit terms. Please try again.")
+                    }
+                }.onFailure { exception ->
+                    showLoader(false)
+                    ErrorHandler.showError(requireContext(), exception)
+                }
+            } catch (e: Exception) {
+                showLoader(false)
+                ErrorHandler.showError(requireContext(), e)
+            }
+        }
+    }
+    
+    private fun submitTermsAndSignature(signatureBitmap: Bitmap) {
+        // Show loader
+        showLoader(true)
+        
+        // Prepare accepted checkboxes
+        val acceptedCheckboxes = checkboxData.map { checkboxItem ->
+            val checkbox = checkboxes.find { it.tag == checkboxItem.id }
+            AcceptedCheckbox(
+                checkboxId = checkboxItem.id,
+                accepted = checkbox?.isChecked ?: false
+            )
+        }
+        
+        lifecycleScope.launch {
+            try {
+                // Step 1: Submit terms
+                val termsResult = repository.submitTerms(acceptedCheckboxes)
+                
+                termsResult.onSuccess { success ->
+                    if (success) {
+                        // Step 2: Upload signature
+                        val signatureFile = saveSignatureToFile(signatureBitmap)
+                        if (signatureFile != null) {
+                            val signatureResult = repository.uploadSignature(signatureFile)
+                            
+                            signatureResult.onSuccess { sigSuccess ->
+                                if (sigSuccess) {
+                                    // Both APIs successful, navigate to next step
+                                    showLoader(false)
+                                    navigateToNextStep()
+                                } else {
+                                    showLoader(false)
+                                    ErrorHandler.showError(requireContext(), "Failed to upload signature. Please try again.")
+                                }
+                            }.onFailure { exception ->
+                                showLoader(false)
+                                ErrorHandler.showError(requireContext(), exception)
+                            }
+                        } else {
+                            showLoader(false)
+                            ErrorHandler.showError(requireContext(), "Failed to save signature image.")
+                        }
+                    } else {
+                        showLoader(false)
+                        ErrorHandler.showError(requireContext(), "Failed to submit terms. Please try again.")
+                    }
+                }.onFailure { exception ->
+                    showLoader(false)
+                    ErrorHandler.showError(requireContext(), exception)
+                }
+            } catch (e: Exception) {
+                showLoader(false)
+                ErrorHandler.showError(requireContext(), e)
+            }
+        }
+    }
+    
+    private fun saveSignatureToFile(bitmap: Bitmap): File? {
+        return try {
+            val file = File(requireContext().cacheDir, "signature_${System.currentTimeMillis()}.png")
+            val outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+            file
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
     private fun showSignatureDialog() {
         val dialog = SignatureDialogFragment()
         dialog.setSignatureListener(object : SignatureDialogFragment.SignatureListener {
-            override fun onSignatureAccepted() {
-                navigateToNextStep()
+            override fun onSignatureAccepted(signatureBitmap: Bitmap) {
+                // Submit terms and signature
+                submitTermsAndSignature(signatureBitmap)
             }
         })
         dialog.show(parentFragmentManager, "SignatureDialog")
@@ -185,7 +295,7 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
 class SignatureDialogFragment : DialogFragment() {
 
     interface SignatureListener {
-        fun onSignatureAccepted()
+        fun onSignatureAccepted(signatureBitmap: Bitmap)
     }
 
     private var signatureListener: SignatureListener? = null
@@ -251,7 +361,8 @@ class SignatureDialogFragment : DialogFragment() {
 
         btnAcceptSignature.setOnClickListener {
             if (!signaturePad.isEmpty) {
-                signatureListener?.onSignatureAccepted()
+                val signatureBitmap = signaturePad.signatureBitmap
+                signatureListener?.onSignatureAccepted(signatureBitmap)
                 dismiss()
             }
         }

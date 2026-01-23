@@ -174,3 +174,28 @@ data class VerifyPhoneCodeRequest(
     @SerializedName("verification_code")
     val verificationCode: String
 )
+
+/**
+ * Accepted checkbox item
+ */
+data class AcceptedCheckbox(
+    @SerializedName("checkbox_id")
+    val checkboxId: String,
+    
+    @SerializedName("accepted")
+    val accepted: Boolean
+)
+
+/**
+ * Request model for submitting terms acceptance
+ */
+data class SubmitTermsRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("accepted_checkboxes")
+    val acceptedCheckboxes: List<AcceptedCheckbox>
+)
