@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+    <color name="transparent_white">#00FFFFFF</color>
+    
+    <!-- Primary colors - Black for buttons/app bar/status bar -->
+    <color name="blue_primary">#FF000000</color> <!-- Black for buttons/app bar -->
+    <color name="blue_light">#1E1E1E</color>
+    <color name="blue_dark">#000000</color>
+    <color name="blue_icon_bg">#1E1E1E</color>
+    
+    <!-- Gray colors -->
+    <color name="gray_dark">#424242</color>
+    <color name="gray_light">#757575</color>
+    <color name="gray_lighter">#BDBDBD</color>
+    <color name="camera_preview_bg">#2C2C2C</color>
+    
+    <!-- Background colors - White backgrounds -->
+    <color name="light_blue">#E3F2FD</color>
+    <color name="light_blue_icon_bg">#BBDEFB</color>
+    <color name="input_border">#E0E0E0</color>
+    <color name="input_text">#212121</color>
+    <color name="placeholder_text">#9E9E9E</color>
+    <color name="light_grey_bg">#F5F5F5</color>
+    
+    <!-- Accent colors -->
+    <color name="light_green">#C8E6C9</color>
+    <color name="dark_green">#4CAF50</color>
+    <color name="red">#F44336</color>
+    
+    <!-- Icon colors -->
+    <color name="icon_primary">#FFFFFF</color> <!-- White icons on black buttons/app bar -->
+    <color name="icon_secondary">#757575</color>
+    <color name="icon_tertiary">#9E9E9E</color>
+    <color name="icon_blue">#0096f2</color> <!-- Blue for shield and info icons -->
+</resources>
+

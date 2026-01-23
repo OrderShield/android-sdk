@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Purple colors matching screenshot -->
+    <color name="blue_primary">#0096f2</color>
+    <color name="blue_light">#00bbf2</color>
+    <color name="blue_dark">#0066f2</color>
+    <color name="blue_icon_bg">#00e0f2</color>
+    <!-- Gray colors -->
+    <color name="gray_dark">#424242</color>
+    <color name="gray_light">#757575</color>
+    <color name="gray_lighter">#BDBDBD</color>
+    <color name="camera_preview_bg">#2C2C2C</color>
+    <!-- Email screen colors -->
+    <color name="light_blue">#E3F2FD</color>
+    <color name="light_blue_icon_bg">#BBDEFB</color>
+    <color name="input_border">#E0E0E0</color>
+    <color name="input_text">#212121</color>
+    <color name="placeholder_text">#9E9E9E</color>
+    <!-- Terms & Signature colors -->
+    <color name="light_green">#C8E6C9</color>
+    <color name="dark_green">#4CAF50</color>
+    <color name="red">#F44336</color>
+    <color name="light_grey_bg">#F5F5F5</color>
+</resources>
