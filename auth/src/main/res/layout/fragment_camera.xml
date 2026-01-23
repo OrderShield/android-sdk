@@ -6,12 +6,18 @@
     android:background="@color/black">
 
     <!-- Camera Preview - Full Screen, Behind Everything -->
-
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:scaleType="fillCenter" />
+
+    <!-- Face Detection Overlay -->
+    <com.ordershieldsdk.auth.ui.FaceOverlayView
+        android:id="@+id/faceOverlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent" />
 
     <!-- Captured Image (shown after capture) -->
     <ImageView
