@@ -33,12 +33,22 @@ object StepNavigator {
     
     /**
      * Get the next step based on current step and settings
-     * Uses steps_required array to determine which steps to show
+     * Uses steps_remaining from verification/status API to determine which steps to show
+     * New sequence: Phone -> Selfie -> User Info -> Email -> T&C
      */
     fun getNextStep(currentStep: Step): Step? {
         return when (currentStep) {
             Step.INFO -> {
-                // After info, check if selfie is in required steps
+                // After info, check if phone (SMS) is in required steps
+                if (VerificationSettingsManager.isSmsStepRequired()) {
+                    Step.PHONE
+                } else {
+                    getNextStep(Step.PHONE) // Skip phone, get next
+                }
+            }
+            
+            Step.PHONE -> {
+                // After phone (and OTP if required, handled inline), check if selfie is in required steps
                 if (VerificationSettingsManager.isSelfieStepRequired()) {
                     Step.SELFIE
                 } else {
@@ -65,16 +75,7 @@ object StepNavigator {
             }
             
             Step.EMAIL -> {
-                // After email (and OTP if required, handled inline), check if SMS is in required steps
-                if (VerificationSettingsManager.isSmsStepRequired()) {
-                    Step.PHONE
-                } else {
-                    getNextStep(Step.PHONE) // Skip phone, get next
-                }
-            }
-            
-            Step.PHONE -> {
-                // After phone (and OTP if required, handled inline), check if terms or signature is in required steps
+                // After email (and OTP if required, handled inline), check if terms or signature is in required steps
                 if (VerificationSettingsManager.isTermsStepRequired() || 
                     VerificationSettingsManager.isSignatureStepRequired()) {
                     Step.TERMS_SIGNATURE
