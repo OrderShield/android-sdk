@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
@@ -156,6 +157,8 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
             if (!isOtpRequired) {
                 // OTP not required, just continue to next step
                 if (isEmailValid()) {
+                    // Notify callback that email step is completed
+                    CallbackManager.notifyStepCompleted("email")
                     navigateToNextStep()
                 }
             } else {
@@ -168,6 +171,8 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
                 } else {
                     // Second click: Verify OTP and navigate to next step
                     if (isOtpVerified) {
+                        // Notify callback that email step is completed
+                        CallbackManager.notifyStepCompleted("email")
                         navigateToNextStep()
                     }
                 }

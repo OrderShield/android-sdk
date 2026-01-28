@@ -20,6 +20,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CountryCodeHelper
+import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
@@ -217,6 +218,8 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             if (!isOtpRequired) {
                 // OTP not required, just continue to next step
                 if (isPhoneValid()) {
+                    // Notify callback that SMS step is completed
+                    CallbackManager.notifyStepCompleted("sms")
                     navigateToNextStep()
                 }
             } else {
@@ -229,6 +232,8 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
                 } else {
                     // Second click: Verify OTP and navigate to next step
                     if (isOtpVerified) {
+                        // Notify callback that SMS step is completed
+                        CallbackManager.notifyStepCompleted("sms")
                         navigateToNextStep()
                     }
                 }

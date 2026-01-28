@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import kotlinx.coroutines.launch
@@ -250,6 +251,9 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
                 
                 result.onSuccess { success ->
                     if (success) {
+                        // Notify callback that userInfo step is completed
+                        CallbackManager.notifyStepCompleted("userInfo")
+                        
                         // Submit successful, navigate to next step
                         showLoader(false)
                         navigateToNextStep()

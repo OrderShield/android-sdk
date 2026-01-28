@@ -34,6 +34,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import kotlinx.coroutines.launch
@@ -421,6 +422,9 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                 
                 result.onSuccess { success ->
                     if (success) {
+                        // Notify callback that selfie step is completed
+                        CallbackManager.notifyStepCompleted("selfie")
+                        
                         // Upload successful, navigate to next step
                         showLoader(false)
                         navigateToNextStep()

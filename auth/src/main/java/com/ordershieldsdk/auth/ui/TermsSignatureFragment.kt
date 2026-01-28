@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.github.gcacace.signaturepad.views.SignaturePad
 import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.model.AcceptedCheckbox
@@ -182,6 +183,9 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
                 
                 result.onSuccess { success ->
                     if (success) {
+                        // Notify callback that terms step is completed
+                        CallbackManager.notifyStepCompleted("terms")
+                        
                         // Terms submitted successfully, navigate to next step
                         showLoader(false)
                         navigateToNextStep()
@@ -220,6 +224,9 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
                 
                 termsResult.onSuccess { success ->
                     if (success) {
+                        // Notify callback that terms step is completed
+                        CallbackManager.notifyStepCompleted("terms")
+                        
                         // Step 2: Upload signature
                         val signatureFile = saveSignatureToFile(signatureBitmap)
                         if (signatureFile != null) {
@@ -227,6 +234,9 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
                             
                             signatureResult.onSuccess { sigSuccess ->
                                 if (sigSuccess) {
+                                    // Notify callback that signature step is completed
+                                    CallbackManager.notifyStepCompleted("signature")
+                                    
                                     // Both APIs successful, navigate to next step
                                     showLoader(false)
                                     navigateToNextStep()

@@ -28,7 +28,9 @@ class MainActivity : AppCompatActivity() {
         btnStartVerification.setOnClickListener {
             // Start verification flow when button is clicked
             AuthSDK.startVerification(this) { success ->
-                // Handle result if needed
+                print("++++++++++++++++++++++++++++++++++++++++")
+                print("Verification success: $success")
+                print("++++++++++++++++++++++++++++++++++++++++")
             }
         }
     }

@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import com.ordershieldsdk.auth.R
+import com.ordershieldsdk.auth.core.CallbackManager
 
 class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_complete) {
 
@@ -12,6 +13,9 @@ class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_com
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Notify callback that all verification is completed
+        CallbackManager.notifyVerificationCompleted()
 
         initViews(view)
         setupClickListeners()

@@ -15,11 +15,11 @@ object AuthSDK {
     private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
-     * Initialize SDK with configuration
+     * Initialize SDK with configuration (internal method)
      * @param context Application context
      * @param config SDK configuration containing API key, base URL, etc.
      */
-    fun init(context: Context, config: SDKConfig) {
+    private fun init(context: Context, config: SDKConfig) {
         try {
             // Initialize network module with configuration
             NetworkModule.getInstance().initialize(config)
@@ -59,16 +59,37 @@ object AuthSDK {
      * @param context Application context
      * @param apiKey API key for authentication
      * @param enableLogging Enable HTTP logging (default: false)
+     * @param callback Optional callback to receive verification step completion notifications
      */
     fun init(
         context: Context,
         apiKey: String,
-        enableLogging: Boolean = false
+        enableLogging: Boolean = false,
+        callback: VerificationCallback? = null
     ) {
+        // Store callback
+        CallbackManager.setCallback(callback)
+        
         val config = SDKConfig(
             apiKey = apiKey,
             enableLogging = enableLogging
         )
+        init(context, config)
+    }
+    
+    /**
+     * Initialize SDK with configuration and callback
+     * @param context Application context
+     * @param config SDK configuration containing API key, base URL, etc.
+     * @param callback Optional callback to receive verification step completion notifications
+     */
+    fun init(
+        context: Context,
+        config: SDKConfig,
+        callback: VerificationCallback? = null
+    ) {
+        // Store callback
+        CallbackManager.setCallback(callback)
         init(context, config)
     }
 
