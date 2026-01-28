@@ -107,26 +107,20 @@ class MainActivity : AppCompatActivity() {
             callback = object : VerificationCallback {
                 override fun onStepCompleted(step: String) {
                     // Called when each verification step completes
-                    when (step) {
-                        "selfie" -> Log.d("AuthSDK", "Selfie verification completed")
-                        "userInfo" -> Log.d("AuthSDK", "User info submitted")
-                        "email" -> Log.d("AuthSDK", "Email verification completed")
-                        "sms" -> Log.d("AuthSDK", "Phone verification completed")
-                        "terms" -> Log.d("AuthSDK", "Terms accepted")
-                        "signature" -> Log.d("AuthSDK", "Signature uploaded")
-                    }
+                    // Possible step values: "selfie", "userInfo", "email", "sms", "terms", "signature"
+                    Log.d("AuthSDK", "Step completed: $step")
                 }
                 
                 override fun onVerificationCompleted() {
-                    // Called when all verification steps are completed
+                    // Called when all verification steps are completed successfully
                     Log.d("AuthSDK", "All verification completed successfully!")
                     // Update UI, navigate to next screen, etc.
                 }
                 
                 override fun onVerificationFailed(error: String) {
-                    // Called when verification fails
+                    // Note: This callback is defined but may not be called in all error scenarios
+                    // Errors are typically handled and displayed to users via Toast messages
                     Log.e("AuthSDK", "Verification failed: $error")
-                    // Handle error, show message to user, etc.
                 }
             }
         )
@@ -180,27 +174,37 @@ AuthSDK.startVerification(this) { success ->
 ### Complete Example
 
 ```kotlin
+import android.os.Bundle
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.ordershieldsdk.auth.core.AuthSDK
+import com.ordershieldsdk.auth.core.VerificationCallback
+
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
-        // Initialize SDK
+        // Initialize SDK with callbacks
         AuthSDK.init(
             context = this,
             apiKey = "your-api-key-here",
             enableLogging = true,
             callback = object : VerificationCallback {
                 override fun onStepCompleted(step: String) {
+                    // Called for each completed step: "selfie", "userInfo", "email", "sms", "terms", "signature"
                     Toast.makeText(this@MainActivity, "Step completed: $step", Toast.LENGTH_SHORT).show()
                 }
                 
                 override fun onVerificationCompleted() {
+                    // Called when all verification steps are completed
                     Toast.makeText(this@MainActivity, "Verification completed!", Toast.LENGTH_LONG).show()
                     // Navigate to next screen or update UI
                 }
                 
                 override fun onVerificationFailed(error: String) {
+                    // Note: May not be called in all error scenarios
                     Toast.makeText(this@MainActivity, "Error: $error", Toast.LENGTH_LONG).show()
                 }
             }
@@ -210,7 +214,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnStartVerification).setOnClickListener {
             AuthSDK.startVerification(this) { success ->
                 if (success) {
-                    // Verification completed
+                    // Verification completed successfully
+                    Toast.makeText(this@MainActivity, "Verification successful!", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Verification failed
+                    Toast.makeText(this@MainActivity, "Verification failed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -226,30 +234,43 @@ The SDK provides two types of callbacks:
 
 Provides detailed callbacks for each verification step:
 
-- **`onStepCompleted(step: String)`** - Called when each step completes
-  - Possible values: `"selfie"`, `"userInfo"`, `"email"`, `"sms"`, `"terms"`, `"signature"`
-- **`onVerificationCompleted()`** - Called when all steps are completed
-- **`onVerificationFailed(error: String)`** - Called when verification fails
+- **`onStepCompleted(step: String)`** - Called when each step completes successfully
+  - Possible step values: `"selfie"`, `"userInfo"`, `"email"`, `"sms"`, `"terms"`, `"signature"`
+  - Called in sequence as each step is completed
+- **`onVerificationCompleted()`** - Called when all verification steps are completed successfully
+  - This is called when the user reaches the completion screen
+- **`onVerificationFailed(error: String)`** - Defined but may not be called in all error scenarios
+  - Most errors are handled internally and displayed to users via Toast messages
 
 ### 2. Simple Result Callback
 
 Provides a simple boolean result:
 
-- **`onResult: (Boolean) -> Unit`** - Called with `true` on success, `false` on failure
+- **`onResult: (Boolean) -> Unit`** - Called with `true` when verification completes successfully, `false` on failure
+  - This callback is called when `onVerificationCompleted()` is triggered (success) or when verification fails
 
 **Note:** You can use both callbacks together. The `VerificationCallback` provides detailed step-by-step notifications, while the simple callback provides a final result.
 
 ## Verification Steps
 
-The SDK follows a specific sequence of verification steps:
+The SDK follows a fixed sequence of verification steps:
 
-1. **Phone** - Phone number input with optional OTP verification
+1. **Phone (SMS)** - Phone number input with optional OTP verification
+   - Step name in callback: `"sms"`
 2. **Selfie** - Selfie capture and upload
+   - Step name in callback: `"selfie"`
 3. **User Info** - First name, last name, and date of birth
+   - Step name in callback: `"userInfo"`
 4. **Email** - Email input with optional OTP verification
+   - Step name in callback: `"email"`
 5. **Terms & Conditions** - Terms acceptance with optional signature
+   - Step names in callback: `"terms"` (when terms are accepted), `"signature"` (when signature is uploaded, if required)
 
-**Note:** The steps shown depend on the `steps_remaining` array returned from the verification status API. Steps that are already completed or not required will be skipped automatically.
+**Important Notes:**
+- The steps shown depend on the `steps_remaining` array returned from the verification status API
+- Steps that are already completed or not in `steps_remaining` will be skipped automatically
+- The sequence is fixed: Phone → Selfie → User Info → Email → Terms & Conditions
+- Each step completion triggers `onStepCompleted()` with the corresponding step name
 
 ## Configuration
 
@@ -291,7 +312,9 @@ The base URL is configured in the SDK and points to: `https://ordershield-api.pr
 
 ## Error Handling
 
-The SDK automatically handles and displays errors to users. All API errors are parsed and shown as user-friendly Toast messages. You can also handle errors through the `VerificationCallback.onVerificationFailed()` method.
+The SDK automatically handles and displays errors to users. All API errors are parsed and shown as user-friendly Toast messages within the SDK. 
+
+**Note:** The `onVerificationFailed()` callback in `VerificationCallback` is defined but may not be called in all error scenarios. Errors are typically handled internally and displayed to users automatically. The simple `onResult` callback in `startVerification()` will be called with `false` if verification fails.
 
 ## Support
 
