@@ -16,10 +16,9 @@ object AuthSDK {
 
     /**
      * Initialize SDK with configuration (internal method)
-     * @param context Application context
      * @param config SDK configuration containing API key, base URL, etc.
      */
-    private fun init(context: Context, config: SDKConfig) {
+    private fun init(config: SDKConfig) {
         try {
             // Initialize network module with configuration
             NetworkModule.getInstance().initialize(config)
@@ -74,34 +73,36 @@ object AuthSDK {
             apiKey = apiKey,
             enableLogging = enableLogging
         )
-        init(context, config)
+        init(config)
     }
     
     /**
      * Initialize SDK with configuration and callback
-     * @param context Application context
      * @param config SDK configuration containing API key, base URL, etc.
      * @param callback Optional callback to receive verification step completion notifications
      */
     fun init(
-        context: Context,
         config: SDKConfig,
         callback: VerificationCallback? = null
     ) {
         // Store callback
         CallbackManager.setCallback(callback)
-        init(context, config)
+        init(config)
     }
 
     /**
      * Start the verification flow
      * @param activity Current activity
-     * @param onResult Callback with verification result
+     * @param onResult Optional callback that will be called when verification completes (true) or fails (false)
+     *                 Note: For step-by-step callbacks, use VerificationCallback in init() method
      */
     fun startVerification(activity: Activity, onResult: (Boolean) -> Unit = {}) {
         if (!isInitialized) {
             throw IllegalStateException("SDK not initialized. Call AuthSDK.init() first.")
         }
+
+        // Store the onResult callback
+        CallbackManager.setOnResultCallback(onResult)
 
         val intent = Intent(activity, VerificationActivity::class.java)
         activity.startActivity(intent)

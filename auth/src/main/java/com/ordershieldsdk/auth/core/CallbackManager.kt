@@ -9,11 +9,21 @@ internal object CallbackManager {
     @Volatile
     private var callback: VerificationCallback? = null
     
+    @Volatile
+    private var onResultCallback: ((Boolean) -> Unit)? = null
+    
     /**
-     * Set the verification callback
+     * Set the verification callback (for step-by-step notifications)
      */
     fun setCallback(callback: VerificationCallback?) {
         this.callback = callback
+    }
+    
+    /**
+     * Set the simple result callback (for final result only)
+     */
+    fun setOnResultCallback(onResult: ((Boolean) -> Unit)?) {
+        this.onResultCallback = onResult
     }
     
     /**
@@ -33,6 +43,8 @@ internal object CallbackManager {
      */
     fun notifyVerificationCompleted() {
         callback?.onVerificationCompleted()
+        // Also call the simple onResult callback with success
+        onResultCallback?.invoke(true)
     }
     
     /**
@@ -40,12 +52,15 @@ internal object CallbackManager {
      */
     fun notifyVerificationFailed(error: String) {
         callback?.onVerificationFailed(error)
+        // Also call the simple onResult callback with failure
+        onResultCallback?.invoke(false)
     }
     
     /**
-     * Clear the callback
+     * Clear all callbacks
      */
     fun clear() {
         callback = null
+        onResultCallback = null
     }
 }
