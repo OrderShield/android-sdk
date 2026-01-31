@@ -21,6 +21,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "OrderShieldSDK"
-include(":app")
-include(":auth")
- 
+include(":sample-kotlin")
+include(":ordershield-sdk")
+include(":sample-java")
