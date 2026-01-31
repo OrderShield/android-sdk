@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         // Base URL is fixed in auth module
         AuthSDK.init(
             context = this,
-            apiKey = "prod_TfHaD4kYlIwdUGpBsflsMwpozo3NazRgRNsqspwnws4",
+            apiKey = "prod_uut9TA17WipHXRfkxvYjvnpLElqLdnh0YyTNNuTn_Zk",
             enableLogging = true // Set to false in production
         )
         

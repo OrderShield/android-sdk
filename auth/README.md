@@ -10,7 +10,6 @@ OrderShield Auth SDK is an Android library module that provides a complete verif
 - [Starting Verification](#starting-verification)
 - [Callbacks](#callbacks)
 - [Verification Steps](#verification-steps)
-- [Configuration](#configuration)
 - [Requirements](#requirements)
 
 ## Installation
@@ -87,9 +86,9 @@ class MainActivity : AppCompatActivity() {
 }
 ```
 
-### Initialization with Callbacks (Recommended)
+### Initialization with Step-by-Step Callbacks
 
-For step-by-step verification callbacks:
+To receive callbacks for each verification step:
 
 ```kotlin
 import com.ordershieldsdk.auth.core.AuthSDK
@@ -113,38 +112,17 @@ class MainActivity : AppCompatActivity() {
                 
                 override fun onVerificationCompleted() {
                     // Called when all verification steps are completed successfully
-                    Log.d("AuthSDK", "All verification completed successfully!")
-                    // Update UI, navigate to next screen, etc.
+                    Log.d("AuthSDK", "All verification completed!")
                 }
                 
                 override fun onVerificationFailed(error: String) {
-                    // Note: This callback is defined but may not be called in all error scenarios
-                    // Errors are typically handled and displayed to users via Toast messages
+                    // Note: This may not be called in all error scenarios
                     Log.e("AuthSDK", "Verification failed: $error")
                 }
             }
         )
     }
 }
-```
-
-### Advanced Initialization with SDKConfig
-
-For more control over configuration:
-
-```kotlin
-import com.ordershieldsdk.auth.core.AuthSDK
-import com.ordershieldsdk.auth.core.SDKConfig
-
-val config = SDKConfig(
-    apiKey = "your-api-key-here",
-    enableLogging = true
-)
-
-AuthSDK.init(
-    config = config,
-    callback = yourVerificationCallback // Optional
-)
 ```
 
 ## Starting Verification
@@ -175,8 +153,8 @@ AuthSDK.startVerification(this) { success ->
 
 ```kotlin
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ordershieldsdk.auth.core.AuthSDK
 import com.ordershieldsdk.auth.core.VerificationCallback
@@ -186,39 +164,37 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
-        // Initialize SDK with callbacks
+        // Initialize SDK with step-by-step callbacks
         AuthSDK.init(
             context = this,
             apiKey = "your-api-key-here",
             enableLogging = true,
             callback = object : VerificationCallback {
                 override fun onStepCompleted(step: String) {
-                    // Called for each completed step: "selfie", "userInfo", "email", "sms", "terms", "signature"
-                    Toast.makeText(this@MainActivity, "Step completed: $step", Toast.LENGTH_SHORT).show()
+                    // Called for each completed step
+                    Log.d("AuthSDK", "Step completed: $step")
                 }
                 
                 override fun onVerificationCompleted() {
-                    // Called when all verification steps are completed
-                    Toast.makeText(this@MainActivity, "Verification completed!", Toast.LENGTH_LONG).show()
-                    // Navigate to next screen or update UI
+                    // Called when all steps are completed
+                    Log.d("AuthSDK", "Verification completed!")
                 }
                 
                 override fun onVerificationFailed(error: String) {
-                    // Note: May not be called in all error scenarios
-                    Toast.makeText(this@MainActivity, "Error: $error", Toast.LENGTH_LONG).show()
+                    // May not be called in all error scenarios
+                    Log.e("AuthSDK", "Error: $error")
                 }
             }
         )
         
         // Setup button to start verification
         findViewById<Button>(R.id.btnStartVerification).setOnClickListener {
+            // Start verification with result callback
             AuthSDK.startVerification(this) { success ->
                 if (success) {
-                    // Verification completed successfully
-                    Toast.makeText(this@MainActivity, "Verification successful!", Toast.LENGTH_SHORT).show()
+                    Log.d("AuthSDK", "Verification successful!")
                 } else {
-                    // Verification failed
-                    Toast.makeText(this@MainActivity, "Verification failed", Toast.LENGTH_SHORT).show()
+                    Log.e("AuthSDK", "Verification failed")
                 }
             }
         }
@@ -228,14 +204,14 @@ class MainActivity : AppCompatActivity() {
 
 ## Callbacks
 
-The SDK provides two types of callbacks:
+The SDK provides two ways to receive verification callbacks:
 
 ### 1. VerificationCallback (Step-by-Step)
 
-Provides detailed callbacks for each verification step:
+Set this in `AuthSDK.init()` to receive detailed callbacks for each verification step:
 
 - **`onStepCompleted(step: String)`** - Called when each step completes successfully
-  - Possible step values: `"selfie"`, `"userInfo"`, `"email"`, `"sms"`, `"terms"`, `"signature"`
+  - Step values: `"selfie"`, `"userInfo"`, `"email"`, `"sms"`, `"terms"`, `"signature"`
   - Called in sequence as each step is completed
 - **`onVerificationCompleted()`** - Called when all verification steps are completed successfully
   - This is called when the user reaches the completion screen
@@ -244,7 +220,7 @@ Provides detailed callbacks for each verification step:
 
 ### 2. Simple Result Callback
 
-Provides a simple boolean result:
+Set this in `AuthSDK.startVerification()` to receive a simple boolean result:
 
 - **`onResult: (Boolean) -> Unit`** - Called with `true` when verification completes successfully, `false` on failure
   - This callback is called when `onVerificationCompleted()` is triggered (success) or when verification fails
@@ -271,23 +247,6 @@ The SDK follows a fixed sequence of verification steps:
 - Steps that are already completed or not in `steps_remaining` will be skipped automatically
 - The sequence is fixed: Phone → Selfie → User Info → Email → Terms & Conditions
 - Each step completion triggers `onStepCompleted()` with the corresponding step name
-
-## Configuration
-
-### SDKConfig
-
-You can customize the SDK configuration:
-
-```kotlin
-val config = SDKConfig(
-    apiKey = "your-api-key-here",
-    enableLogging = true // Enable HTTP request/response logging
-)
-```
-
-### Base URL
-
-The base URL is configured in the SDK and points to: `https://ordershield-api.projectbeta.biz/`
 
 ## Requirements
 
