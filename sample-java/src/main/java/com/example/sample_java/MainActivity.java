@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
         AuthSDK authSDK = AuthSDK.INSTANCE;
 
-        authSDK.init(this, "****************", true, null);
+        authSDK.init(this, "prod_SHy1Bf5dPNrIikD1FDayUwUhk3yGC0kQ9OOHAs4XnJQ", true, null);
 
 // Setup button click listener
         MaterialButton btnStartVerification = findViewById(R.id.btnStartVerification);
