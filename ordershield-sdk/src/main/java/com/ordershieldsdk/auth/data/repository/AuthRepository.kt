@@ -126,9 +126,9 @@ class AuthRepository {
 
     /**
      * Get verification status
-     * Returns steps_remaining list on success
+     * Returns VerificationStatusResult containing steps_remaining and is_complete flag
      */
-    suspend fun getVerificationStatus(): Result<List<String>?> {
+    suspend fun getVerificationStatus(): Result<com.ordershieldsdk.auth.data.model.VerificationStatusResult> {
         return try {
             val customerId = SessionManager.getCustomerId()
             val sessionToken = SessionManager.getSessionToken()
@@ -142,7 +142,11 @@ class AuthRepository {
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 if (body.statusCode == 200 && body.status == "success") {
-                    Result.success(body.data.stepsRemaining)
+                    val result = com.ordershieldsdk.auth.data.model.VerificationStatusResult(
+                        stepsRemaining = body.data.stepsRemaining,
+                        isComplete = body.data.isComplete
+                    )
+                    Result.success(result)
                 } else {
                     Result.failure(Exception(body.message ?: "Failed to get verification status"))
                 }

@@ -72,6 +72,8 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
     private var countdownStarted = false
     private var faceDetectionTimer: Runnable? = null
     private var facePresentDuringCountdown = true
+    private var timerRetryCount = 0
+    private val MAX_TIMER_RETRIES = 300 // 30 seconds max (300 * 100ms = 30s)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -370,6 +372,9 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
 
     // Helper to keep logic clean
     private fun handleFaceLost() {
+        // Reset timer counter when face is lost
+        timerRetryCount = 0
+        
         if (countdownStarted) {
             facePresentDuringCountdown = false
             abortCountdown()
@@ -384,21 +389,51 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         // Cancel any existing timer
         faceDetectionTimer?.let { countdownHandler?.removeCallbacks(it) }
         
+        // Reset retry count when starting new timer
+        timerRetryCount = 0
+        
         faceDetectionTimer = object : Runnable {
             override fun run() {
+                // Safety check: prevent infinite loops with timeout
+                if (timerRetryCount >= MAX_TIMER_RETRIES) {
+                    Log.w("CameraFragment", "Face detection timer timeout reached, resetting")
+                    resetFaceDetection()
+                    return
+                }
+                
+                timerRetryCount++
+                
                 if (isFaceDetected && !countdownStarted) {
                     val elapsedTime = System.currentTimeMillis() - faceDetectionStartTime
                     if (elapsedTime >= FACE_DETECTION_DURATION_MS) {
                         // 3 seconds passed - start countdown
+                        timerRetryCount = 0 // Reset counter when countdown starts
                         startCountdown()
                     } else {
                         // Continue checking
                         countdownHandler?.postDelayed(this, 100)
                     }
+                } else if (!isFaceDetected) {
+                    // Face lost, reset counter
+                    timerRetryCount = 0
                 }
             }
         }
         countdownHandler?.postDelayed(faceDetectionTimer!!, 100)
+    }
+    
+    /**
+     * Reset face detection state when timeout occurs
+     */
+    private fun resetFaceDetection() {
+        timerRetryCount = 0
+        faceDetectionStartTime = 0
+        isFaceDetected = false
+        faceOverlayView.visibility = View.GONE
+        tvCountdownText.text = "Position your face in the frame"
+        if (countdownStarted) {
+            abortCountdown()
+        }
     }
 
     override fun onPause() {
@@ -456,8 +491,17 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         val nextStep = com.ordershieldsdk.auth.internal.StepNavigator.getNextStep(
             com.ordershieldsdk.auth.internal.StepNavigator.Step.SELFIE
         )
-        nextStep?.let {
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(it)
+        if (nextStep != null) {
+            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(nextStep)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+        } else {
+            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
+            Log.w("CameraFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
+            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(
+                com.ordershieldsdk.auth.internal.StepNavigator.Step.COMPLETE
+            )
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit()

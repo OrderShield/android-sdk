@@ -557,3 +557,12 @@ data class VerificationStatusResponse(
     @SerializedName("statusCode")
     val statusCode: Int
 )
+
+/**
+ * Wrapper for verification status result used internally
+ * Contains steps_remaining and is_complete flag for proper handling
+ */
+data class VerificationStatusResult(
+    val stepsRemaining: List<String>?,
+    val isComplete: Boolean?
+)

@@ -35,47 +35,36 @@ object StepNavigator {
      * Get the next step based on current step and settings
      * Uses steps_remaining from verification/status API to determine which steps to show
      * New sequence: Phone -> Selfie -> User Info -> Email -> T&C
+     * 
+     * Uses iterative approach instead of recursion to prevent stack overflow and infinite loops
      */
     fun getNextStep(currentStep: Step): Step? {
+        // Define the fixed step order (excluding INFO and COMPLETE which are special)
+        val stepOrder = listOf(Step.PHONE, Step.SELFIE, Step.USER_INFO, Step.EMAIL, Step.TERMS_SIGNATURE)
+        
         return when (currentStep) {
             Step.INFO -> {
-                // After info, check if phone (SMS) is in required steps
-                if (VerificationSettingsManager.isSmsStepRequired()) {
-                    Step.PHONE
-                } else {
-                    getNextStep(Step.PHONE) // Skip phone, get next
-                }
+                // After info, find first required step in order
+                findNextRequiredStep(stepOrder, startIndex = -1)
             }
             
             Step.PHONE -> {
-                // After phone (and OTP if required, handled inline), check if selfie is in required steps
-                if (VerificationSettingsManager.isSelfieStepRequired()) {
-                    Step.SELFIE
-                } else {
-                    getNextStep(Step.SELFIE) // Skip selfie, get next
-                }
+                // After phone, find next required step starting from SELFIE
+                findNextRequiredStep(stepOrder, startIndex = 0) // 0 = SELFIE index
             }
             
             Step.SELFIE -> {
-                // After selfie, check if userInfo is in required steps
-                if (VerificationSettingsManager.isUserInfoStepRequired()) {
-                    Step.USER_INFO
-                } else {
-                    getNextStep(Step.USER_INFO) // Skip user info, get next
-                }
+                // After selfie, find next required step starting from USER_INFO
+                findNextRequiredStep(stepOrder, startIndex = 1) // 1 = USER_INFO index
             }
             
             Step.USER_INFO -> {
-                // After user info, check if email is in required steps
-                if (VerificationSettingsManager.isEmailStepRequired()) {
-                    Step.EMAIL
-                } else {
-                    getNextStep(Step.EMAIL) // Skip email, get next
-                }
+                // After user info, find next required step starting from EMAIL
+                findNextRequiredStep(stepOrder, startIndex = 2) // 2 = EMAIL index
             }
             
             Step.EMAIL -> {
-                // After email (and OTP if required, handled inline), check if terms or signature is in required steps
+                // After email, check if terms/signature is required, otherwise COMPLETE
                 if (VerificationSettingsManager.isTermsStepRequired() || 
                     VerificationSettingsManager.isSignatureStepRequired()) {
                     Step.TERMS_SIGNATURE
@@ -94,6 +83,51 @@ object StepNavigator {
                 null
             }
         }
+    }
+    
+    /**
+     * Helper method to find the next required step in the order
+     * Iterates through steps starting from startIndex + 1
+     * Returns first required step found, or COMPLETE if none found
+     */
+    private fun findNextRequiredStep(stepOrder: List<Step>, startIndex: Int): Step {
+        // Iterate through steps starting after startIndex
+        for (i in (startIndex + 1) until stepOrder.size) {
+            val step = stepOrder[i]
+            when (step) {
+                Step.PHONE -> {
+                    if (VerificationSettingsManager.isSmsStepRequired()) {
+                        return Step.PHONE
+                    }
+                }
+                Step.SELFIE -> {
+                    if (VerificationSettingsManager.isSelfieStepRequired()) {
+                        return Step.SELFIE
+                    }
+                }
+                Step.USER_INFO -> {
+                    if (VerificationSettingsManager.isUserInfoStepRequired()) {
+                        return Step.USER_INFO
+                    }
+                }
+                Step.EMAIL -> {
+                    if (VerificationSettingsManager.isEmailStepRequired()) {
+                        return Step.EMAIL
+                    }
+                }
+                Step.TERMS_SIGNATURE -> {
+                    if (VerificationSettingsManager.isTermsStepRequired() || 
+                        VerificationSettingsManager.isSignatureStepRequired()) {
+                        return Step.TERMS_SIGNATURE
+                    }
+                }
+                else -> {
+                    // Should not happen, but handle gracefully
+                }
+            }
+        }
+        // No required steps found, go to COMPLETE
+        return Step.COMPLETE
     }
     
     /**

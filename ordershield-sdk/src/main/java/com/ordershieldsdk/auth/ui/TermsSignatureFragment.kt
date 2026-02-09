@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -293,8 +294,15 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
 
     private fun navigateToNextStep() {
         val nextStep = StepNavigator.getNextStep(StepNavigator.Step.TERMS_SIGNATURE)
-        nextStep?.let {
-            val fragment = StepNavigator.createFragmentForStep(it)
+        if (nextStep != null) {
+            val fragment = StepNavigator.createFragmentForStep(nextStep)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+        } else {
+            // TERMS_SIGNATURE should always return COMPLETE, but handle null gracefully
+            Log.w("TermsSignatureFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
+            val fragment = StepNavigator.createFragmentForStep(StepNavigator.Step.COMPLETE)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit()

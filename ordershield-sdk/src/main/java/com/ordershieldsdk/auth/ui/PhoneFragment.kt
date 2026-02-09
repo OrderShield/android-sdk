@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -346,8 +347,15 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
     private fun navigateToNextStep() {
         // Navigate to next step after phone (and OTP if required)
         val nextStep = StepNavigator.getNextStep(StepNavigator.Step.PHONE)
-        nextStep?.let {
-            val fragment = StepNavigator.createFragmentForStep(it)
+        if (nextStep != null) {
+            val fragment = StepNavigator.createFragmentForStep(nextStep)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+        } else {
+            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
+            Log.w("PhoneFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
+            val fragment = StepNavigator.createFragmentForStep(StepNavigator.Step.COMPLETE)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit()

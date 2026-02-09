@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.TextView
@@ -282,8 +283,17 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
         val nextStep = com.ordershieldsdk.auth.internal.StepNavigator.getNextStep(
             com.ordershieldsdk.auth.internal.StepNavigator.Step.USER_INFO
         )
-        nextStep?.let {
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(it)
+        if (nextStep != null) {
+            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(nextStep)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+        } else {
+            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
+            Log.w("UserInformationFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
+            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(
+                com.ordershieldsdk.auth.internal.StepNavigator.Step.COMPLETE
+            )
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit()

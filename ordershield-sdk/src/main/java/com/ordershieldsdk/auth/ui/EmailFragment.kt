@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -285,8 +286,15 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
     private fun navigateToNextStep() {
         // Navigate to next step after email (and OTP if required)
         val nextStep = StepNavigator.getNextStep(StepNavigator.Step.EMAIL)
-        nextStep?.let {
-            val fragment = StepNavigator.createFragmentForStep(it)
+        if (nextStep != null) {
+            val fragment = StepNavigator.createFragmentForStep(nextStep)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+        } else {
+            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
+            Log.w("EmailFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
+            val fragment = StepNavigator.createFragmentForStep(StepNavigator.Step.COMPLETE)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit()
