@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
             String apiKey = etApiKey.getText() != null ? etApiKey.getText().toString() : "";
             AuthSDK.INSTANCE.init(
                     this,
-                    apiKey,
+                    apiKey.trim(),
                     true // enableLogging
             );
         });

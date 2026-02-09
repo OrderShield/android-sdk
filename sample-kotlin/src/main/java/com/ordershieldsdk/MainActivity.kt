@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
             // Initialize SDK
             AuthSDK.init(
                 context = this,
-                apiKey = etApiKey.text?.toString() ?: "",
+                apiKey = (etApiKey.text?.toString() ?: "").trim(),
                 enableLogging = true
             )
         }

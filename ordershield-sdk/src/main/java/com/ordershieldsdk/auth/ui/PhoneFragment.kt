@@ -60,7 +60,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
         setupClickListeners()
         handleEdgeToEdge(view)
     }
-    
+
     private fun handleEdgeToEdge(view: View) {
         // Handle system window insets for footer
         val footerLayout = view.findViewById<View>(R.id.footerLayout)
@@ -76,7 +76,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
                 insets
             }
         }
-        
+
         // Underline the OrderShield text in footer
         val tvOrderShieldLink = view.findViewById<TextView>(R.id.tvOrderShieldLink)
         tvOrderShieldLink?.paintFlags = tvOrderShieldLink.paintFlags or Paint.UNDERLINE_TEXT_FLAG
@@ -88,7 +88,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
         btnGetOtp = view.findViewById(R.id.btnGetOtp)
         otpSection = view.findViewById(R.id.otpSection)
         etVerificationCode = view.findViewById(R.id.etVerificationCode)
-        
+
         // Check if OTP is required
         val isOtpRequired = VerificationSettingsManager.isSmsVerificationRequired()
         if (!isOtpRequired) {
@@ -96,7 +96,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             otpSection.visibility = View.GONE
             btnGetOtp.text = getString(R.string.continue_text)
         }
-        
+
         // Button starts disabled
         btnGetOtp.backgroundTintList = android.content.res.ColorStateList.valueOf(
             resources.getColor(R.color.gray_lighter, null)
@@ -126,10 +126,10 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
                 return view
             }
         }
-        
+
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCountryCode.adapter = adapter
-        
+
         // Auto-select country code based on user's location
         val detectedPhoneCode = CountryCodeHelper.detectPhoneCountryCode(requireContext())
         val defaultSelectionIndex = if (detectedPhoneCode != null) {
@@ -139,14 +139,15 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             // Default to +1 if detection fails
             0
         }
-        
+
         spinnerCountryCode.setSelection(defaultSelectionIndex)
         selectedCountryCode = countryCodes[defaultSelectionIndex]
-        
+
         spinnerCountryCode.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 selectedCountryCode = countryCodes[position]
             }
+
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
     }
@@ -159,12 +160,12 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
                 val phone = s?.toString()?.trim() ?: ""
                 val digitsOnly = phone.replace(Regex("[^0-9]"), "")
                 val isValid = digitsOnly.length >= 10
-                
+
                 if (!isOtpSent) {
                     btnGetOtp.isEnabled = isValid
                     updateButtonAppearance(isValid)
                 }
-                
+
                 // Reset OTP state if phone changes
                 if (isOtpSent) {
                     isOtpSent = false
@@ -178,13 +179,13 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
 
             override fun afterTextChanged(s: Editable?) {}
         })
-        
+
         etVerificationCode.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val code = s?.toString()?.trim() ?: ""
                 val isValid = code.length == 6
-                
+
                 // Only enable button if code is 6 digits and not already verifying
                 if (isValid && !isVerifyingOtp) {
                     btnGetOtp.isEnabled = true
@@ -194,16 +195,17 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
                     updateButtonAppearance(false)
                     isOtpVerified = false
                 }
-                
+
                 // Auto-verify when 6 digits are entered
                 if (code.length == 6 && !isVerifyingOtp) {
                     verifyOtp(code)
                 }
             }
+
             override fun afterTextChanged(s: Editable?) {}
         })
     }
-    
+
     private fun updateButtonAppearance(isEnabled: Boolean) {
         if (isEnabled) {
             btnGetOtp.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.BLACK)
@@ -215,19 +217,37 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             btnGetOtp.setTextColor(resources.getColor(R.color.gray_light, null))
         }
     }
-    
+
     private fun setupClickListeners() {
         btnGetOtp.setOnClickListener {
             val isOtpRequired = VerificationSettingsManager.isSmsVerificationRequired()
-            
+
             if (!isOtpRequired) {
                 // OTP not required, just continue to next step
                 if (isPhoneValid()) {
                     // Track step end
-                    EventTracker.trackStepEnd(StepNavigator.Step.PHONE)
-                    // Notify callback that SMS step is completed
-                    CallbackManager.notifyStepCompleted("sms")
-                    navigateToNextStep()
+
+                    lifecycleScope.launch {
+                        try {
+                            val phone = etPhoneNumber.text?.toString()?.trim() ?: ""
+                            val result = repository.sendPhoneCode(phone)
+
+                            result.onSuccess { success ->
+                                if (success) {
+                                    EventTracker.trackStepEnd(StepNavigator.Step.PHONE)
+                                    // Notify callback that SMS step is completed
+                                    CallbackManager.notifyStepCompleted("sms")
+                                    navigateToNextStep()
+                                } else {
+                                    ErrorHandler.showError(requireContext(), "Failed to send verification code. Please try again.")
+                                }
+                            }.onFailure { exception ->
+                                ErrorHandler.showError(requireContext(), exception)
+                            }
+                        } catch (e: Exception) {
+                            ErrorHandler.showError(requireContext(), e)
+                        }
+                    }
                 }
             } else {
                 // OTP is required
@@ -249,21 +269,21 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             }
         }
     }
-    
+
     private fun sendOtp() {
         val phoneNumber = getPhoneNumber()
         if (phoneNumber.isEmpty() || !isPhoneValid()) {
             return
         }
-        
+
         // Disable button while sending
         btnGetOtp.isEnabled = false
         updateButtonAppearance(false)
-        
+
         lifecycleScope.launch {
             try {
                 val result = repository.sendPhoneCode(phoneNumber)
-                
+
                 result.onSuccess { success ->
                     if (success) {
                         // OTP sent successfully
@@ -292,16 +312,16 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             }
         }
     }
-    
+
     private fun verifyOtp(code: String) {
         if (code.length != 6 || isVerifyingOtp) {
             return
         }
-        
+
         isVerifyingOtp = true
         btnGetOtp.isEnabled = false
         updateButtonAppearance(false)
-        
+
         val phoneNumber = getPhoneNumber()
         if (phoneNumber.isEmpty()) {
             isVerifyingOtp = false
@@ -309,15 +329,15 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             updateButtonAppearance(true)
             return
         }
-        
+
         // Hide keyboard
         val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
         imm.hideSoftInputFromWindow(etVerificationCode.windowToken, 0)
-        
+
         lifecycleScope.launch {
             try {
                 val result = repository.verifyPhoneCode(phoneNumber, code)
-                
+
                 result.onSuccess { success ->
                     isVerifyingOtp = false
                     if (success) {
@@ -351,7 +371,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             }
         }
     }
-    
+
     private fun navigateToNextStep() {
         // Navigate to next step after phone (and OTP if required)
         val nextStep = StepNavigator.getNextStep(StepNavigator.Step.PHONE)
@@ -386,7 +406,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
 
         return true
     }
-    
+
     fun isOtpVerified(): Boolean {
         return isOtpVerified
     }
@@ -396,7 +416,7 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
         // Return with selected country code
         return "$selectedCountryCode$phone"
     }
-    
+
     private fun enforceBlackThemeOnButton(button: MaterialButton) {
         val BLACK = android.graphics.Color.BLACK
         val WHITE = android.graphics.Color.WHITE
