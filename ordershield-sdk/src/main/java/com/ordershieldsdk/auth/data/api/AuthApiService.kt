@@ -12,6 +12,8 @@ import com.ordershieldsdk.auth.data.model.StartVerificationResponse
 import com.ordershieldsdk.auth.data.model.SubmitTermsRequest
 import com.ordershieldsdk.auth.data.model.SubmitTermsResponse
 import com.ordershieldsdk.auth.data.model.TermsCheckboxesResponse
+import com.ordershieldsdk.auth.data.model.TrackEventRequest
+import com.ordershieldsdk.auth.data.model.TrackEventResponse
 import com.ordershieldsdk.auth.data.model.UploadSignatureResponse
 import com.ordershieldsdk.auth.data.model.UserInfoRequest
 import com.ordershieldsdk.auth.data.model.UserInfoUploadResponse
@@ -150,4 +152,13 @@ interface AuthApiService {
         @Part("session_token") sessionToken: okhttp3.RequestBody,
         @Part("image_format") imageFormat: okhttp3.RequestBody
     ): Response<UploadSignatureResponse>
+
+    /**
+     * Track event
+     * POST with customer_id, session_token, event_type, description
+     */
+    @POST("api/sdk/track-event")
+    suspend fun trackEvent(
+        @Body request: TrackEventRequest
+    ): Response<TrackEventResponse>
 }

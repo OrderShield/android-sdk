@@ -616,4 +616,50 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+    /**
+     * Track event
+     * Returns success status
+     */
+    suspend fun trackEvent(eventType: String, description: String): Result<Boolean> {
+        return try {
+            val customerId = SessionManager.getCustomerId()
+            val sessionToken = SessionManager.getSessionToken()
+            
+            if (customerId == null || sessionToken == null) {
+                return Result.failure(Exception("Session not initialized. Please start verification first."))
+            }
+            
+            val request = com.ordershieldsdk.auth.data.model.TrackEventRequest(
+                customerId = customerId,
+                sessionToken = sessionToken,
+                eventType = eventType,
+                description = description
+            )
+            
+            val response = apiService.trackEvent(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 || body.statusCode == 201) {
+                    Result.success(true)
+                } else {
+                    Result.failure(Exception(body.message ?: "Failed to track event"))
+                }
+            } else {
+                // Try to parse error from error body
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message 
+                        ?: response.message() 
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

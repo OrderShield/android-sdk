@@ -23,6 +23,7 @@ import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CountryCodeHelper
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.core.EventTracker
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
@@ -49,6 +50,9 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Track step start
+        EventTracker.trackStepStart(StepNavigator.Step.PHONE)
 
         initViews(view)
         setupCountryCodeSpinner()
@@ -219,6 +223,8 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
             if (!isOtpRequired) {
                 // OTP not required, just continue to next step
                 if (isPhoneValid()) {
+                    // Track step end
+                    EventTracker.trackStepEnd(StepNavigator.Step.PHONE)
                     // Notify callback that SMS step is completed
                     CallbackManager.notifyStepCompleted("sms")
                     navigateToNextStep()
@@ -233,6 +239,8 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
                 } else {
                     // Second click: Verify OTP and navigate to next step
                     if (isOtpVerified) {
+                        // Track step end
+                        EventTracker.trackStepEnd(StepNavigator.Step.PHONE)
                         // Notify callback that SMS step is completed
                         CallbackManager.notifyStepCompleted("sms")
                         navigateToNextStep()

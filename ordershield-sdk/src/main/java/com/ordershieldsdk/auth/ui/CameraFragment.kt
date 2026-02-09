@@ -36,7 +36,9 @@ import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.core.EventTracker
 import com.ordershieldsdk.auth.data.repository.AuthRepository
+import com.ordershieldsdk.auth.internal.StepNavigator
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.ExecutorService
@@ -88,6 +90,9 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Track step start
+        EventTracker.trackStepStart(StepNavigator.Step.SELFIE)
 
         initViews(view)
         initFaceDetector()
@@ -457,6 +462,8 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                 
                 result.onSuccess { success ->
                     if (success) {
+                        // Track step end
+                        EventTracker.trackStepEnd(StepNavigator.Step.SELFIE)
                         // Notify callback that selfie step is completed
                         CallbackManager.notifyStepCompleted("selfie")
                         

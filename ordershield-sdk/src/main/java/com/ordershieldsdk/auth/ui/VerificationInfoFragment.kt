@@ -15,6 +15,7 @@ import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.DeviceInfoHelper
 import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.core.EventTracker
 import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import kotlinx.coroutines.delay
@@ -93,6 +94,8 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
             // Check if error is retryable
             if (isRetryableError(exception) && registerDeviceRetryCount < MAX_RETRIES) {
                 registerDeviceRetryCount++
+                // Track retry event
+                EventTracker.trackStepRetry("register_device")
                 val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (registerDeviceRetryCount - 1)) // Exponential backoff
                 android.util.Log.d(
                     "VerificationInfoFragment",
@@ -126,6 +129,8 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
             // Check if error is retryable
             if (isRetryableError(exception) && startVerificationRetryCount < MAX_RETRIES) {
                 startVerificationRetryCount++
+                // Track retry event
+                EventTracker.trackStepRetry("start_verification")
                 val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (startVerificationRetryCount - 1)) // Exponential backoff
                 android.util.Log.d(
                     "VerificationInfoFragment",
@@ -180,12 +185,16 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
                     SessionManager.setStepsRemaining(statusResult.stepsRemaining)
                     showLoader(false)
                     btnStartVerification.isEnabled = true
+                    // Track session start event
+                    EventTracker.trackSessionStart()
                 }
             }
         }.onFailure { exception ->
             // Check if error is retryable
             if (isRetryableError(exception) && getStatusRetryCount < MAX_RETRIES) {
                 getStatusRetryCount++
+                // Track retry event
+                EventTracker.trackStepRetry("get_verification_status")
                 val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (getStatusRetryCount - 1)) // Exponential backoff
                 android.util.Log.d(
                     "VerificationInfoFragment",

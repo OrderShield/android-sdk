@@ -38,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
 
         btnStartVerify.setOnClickListener(v -> {
             // Start verification flow
-            Toast.makeText(MainActivity.this, "Hello", Toast.LENGTH_LONG).show();
             AuthSDK.INSTANCE.startVerification(
                     this,
                     error -> {

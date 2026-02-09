@@ -24,6 +24,7 @@ import com.google.android.material.button.MaterialButton
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.core.EventTracker
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.model.AcceptedCheckbox
 import com.ordershieldsdk.auth.data.model.TermsCheckbox
@@ -45,6 +46,9 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Track step start
+        EventTracker.trackStepStart(StepNavigator.Step.TERMS_SIGNATURE)
 
         initViews(view)
         fetchTermsCheckboxes()
@@ -184,6 +188,8 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
                 
                 result.onSuccess { success ->
                     if (success) {
+                        // Track step end
+                        EventTracker.trackStepEnd(StepNavigator.Step.TERMS_SIGNATURE)
                         // Notify callback that terms step is completed
                         CallbackManager.notifyStepCompleted("terms")
                         
@@ -235,6 +241,8 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
                             
                             signatureResult.onSuccess { sigSuccess ->
                                 if (sigSuccess) {
+                                    // Track step end
+                                    EventTracker.trackStepEnd(StepNavigator.Step.TERMS_SIGNATURE)
                                     // Notify callback that signature step is completed
                                     CallbackManager.notifyStepCompleted("signature")
                                     

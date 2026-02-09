@@ -566,3 +566,17 @@ data class VerificationStatusResult(
     val stepsRemaining: List<String>?,
     val isComplete: Boolean?
 )
+
+/**
+ * Response model for track event API
+ */
+data class TrackEventResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)

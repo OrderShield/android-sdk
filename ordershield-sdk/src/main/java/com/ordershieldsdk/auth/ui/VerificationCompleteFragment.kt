@@ -6,6 +6,7 @@ import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
+import com.ordershieldsdk.auth.core.EventTracker
 
 class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_complete) {
 
@@ -13,6 +14,9 @@ class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_com
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Track session end event
+        EventTracker.trackSessionEnd()
 
         initViews(view)
         setupClickListeners()

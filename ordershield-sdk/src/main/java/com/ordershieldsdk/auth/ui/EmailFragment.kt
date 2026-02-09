@@ -19,6 +19,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
+import com.ordershieldsdk.auth.core.EventTracker
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
@@ -39,6 +40,9 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Track step start
+        EventTracker.trackStepStart(StepNavigator.Step.EMAIL)
 
         initViews(view)
         setupTextWatchers()
@@ -158,6 +162,8 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
             if (!isOtpRequired) {
                 // OTP not required, just continue to next step
                 if (isEmailValid()) {
+                    // Track step end
+                    EventTracker.trackStepEnd(StepNavigator.Step.EMAIL)
                     // Notify callback that email step is completed
                     CallbackManager.notifyStepCompleted("email")
                     navigateToNextStep()
@@ -172,6 +178,8 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
                 } else {
                     // Second click: Verify OTP and navigate to next step
                     if (isOtpVerified) {
+                        // Track step end
+                        EventTracker.trackStepEnd(StepNavigator.Step.EMAIL)
                         // Notify callback that email step is completed
                         CallbackManager.notifyStepCompleted("email")
                         navigateToNextStep()

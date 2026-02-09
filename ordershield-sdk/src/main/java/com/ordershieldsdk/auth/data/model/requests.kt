@@ -199,3 +199,20 @@ data class SubmitTermsRequest(
     @SerializedName("accepted_checkboxes")
     val acceptedCheckboxes: List<AcceptedCheckbox>
 )
+
+/**
+ * Request model for tracking events
+ */
+data class TrackEventRequest(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("session_token")
+    val sessionToken: String,
+    
+    @SerializedName("event_type")
+    val eventType: String,
+    
+    @SerializedName("description")
+    val description: String
+)
