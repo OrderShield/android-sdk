@@ -3,6 +3,7 @@ package com.ordershieldsdk.auth.core
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.ui.VerificationActivity
 import kotlinx.coroutines.CoroutineScope
@@ -11,14 +12,19 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 object AuthSDK {
+    @Volatile
     private var isInitialized = false
+    
+    @Volatile
+    private var isSettingsLoaded = false
+    
     private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Initialize SDK with configuration (internal method)
      * @param config SDK configuration containing API key, base URL, etc.
      */
-    private fun init(config: SDKConfig) {
+    private fun initInternal(config: SDKConfig) {
         try {
             // Initialize network module with configuration
             NetworkModule.getInstance().initialize(config)
@@ -36,6 +42,7 @@ object AuthSDK {
      * This is called automatically after SDK initialization
      */
     private fun fetchVerificationSettings() {
+        isSettingsLoaded = false
         sdkScope.launch {
             try {
                 val repository = AuthRepository()
@@ -43,69 +50,83 @@ object AuthSDK {
                 result.onSuccess { settings ->
                     // Store settings for use in verification flow
                     VerificationSettingsManager.setSettings(settings)
+                    isSettingsLoaded = true
                 }.onFailure { exception ->
-                    // Handle error if needed
-                    // For now, just log or ignore as per requirement
+                    // Mark as loaded even on failure to allow verification to proceed
+                    // Settings will fallback to session-based steps_remaining
+                    isSettingsLoaded = true
                 }
             } catch (e: Exception) {
-                // Handle exception if needed
+                // Mark as loaded even on exception to allow verification to proceed
+                isSettingsLoaded = true
             }
         }
     }
 
     /**
-     * Initialize SDK with API key (convenience method)
+     * Initialize SDK with API key
      * @param context Application context
      * @param apiKey API key for authentication
      * @param enableLogging Enable HTTP logging (default: false)
-     * @param callback Optional callback to receive verification step completion notifications
      */
     fun init(
         context: Context,
         apiKey: String,
-        enableLogging: Boolean = false,
-        callback: VerificationCallback? = null
+        enableLogging: Boolean = false
     ) {
-        // Store callback
-        CallbackManager.setCallback(callback)
-        
         val config = SDKConfig(
             apiKey = apiKey,
             enableLogging = enableLogging
         )
-        init(config)
+        initInternal(config)
     }
     
     /**
-     * Initialize SDK with configuration and callback
+     * Initialize SDK with configuration
      * @param config SDK configuration containing API key, base URL, etc.
-     * @param callback Optional callback to receive verification step completion notifications
      */
-    fun init(
-        config: SDKConfig,
-        callback: VerificationCallback? = null
-    ) {
-        // Store callback
-        CallbackManager.setCallback(callback)
-        init(config)
+    fun init(config: SDKConfig) {
+        initInternal(config)
     }
 
     /**
      * Start the verification flow
      * @param activity Current activity
-     * @param onResult Optional callback that will be called when verification completes (true) or fails (false)
-     *                 Note: For step-by-step callbacks, use VerificationCallback in init() method
+     * @param onError Callback called when verification cannot start (e.g., SDK not initialized)
+     * @param onStepCompleted Callback called when each verification step completes (e.g., "selfie", "email", "sms")
+     * @param onVerificationCompleted Callback called when verification is completed and user exits (for navigation)
      */
-    fun startVerification(activity: Activity, onResult: (Boolean) -> Unit = {}) {
+    fun startVerification(
+        activity: Activity,
+        onError: (String) -> Unit,
+        onStepCompleted: (String) -> Unit = {},
+        onVerificationCompleted: () -> Unit = {}
+    ) {
+        Log.d("OrderShieldSDK", "startVerification called, isInitialized: $isInitialized")
+        
+        // Check SDK initialization
         if (!isInitialized) {
-            throw IllegalStateException("SDK not initialized. Call AuthSDK.init() first.")
+            Log.e("OrderShieldSDK", "SDK is not initialized")
+            onError("SDK is not initialized")
+            return
         }
 
-        // Store the onResult callback
-        CallbackManager.setOnResultCallback(onResult)
+        // Store callbacks
+        CallbackManager.setCallbacks(
+            onError = onError,
+            onStepCompleted = onStepCompleted,
+            onVerificationCompleted = onVerificationCompleted
+        )
 
-        val intent = Intent(activity, VerificationActivity::class.java)
-        activity.startActivity(intent)
+        try {
+            Log.d("OrderShieldSDK", "Starting VerificationActivity")
+            val intent = Intent(activity, VerificationActivity::class.java)
+            activity.startActivity(intent)
+            Log.d("OrderShieldSDK", "VerificationActivity started successfully")
+        } catch (e: Exception) {
+            Log.e("OrderShieldSDK", "Failed to start VerificationActivity: ${e.message}", e)
+            onError("Failed to start verification: ${e.message}")
+        }
     }
 }
 

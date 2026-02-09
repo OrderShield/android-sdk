@@ -7,60 +7,54 @@ package com.ordershieldsdk.auth.core
 internal object CallbackManager {
     
     @Volatile
-    private var callback: VerificationCallback? = null
+    private var onError: ((String) -> Unit)? = null
     
     @Volatile
-    private var onResultCallback: ((Boolean) -> Unit)? = null
+    private var onStepCompleted: ((String) -> Unit)? = null
+    
+    @Volatile
+    private var onVerificationCompleted: (() -> Unit)? = null
     
     /**
-     * Set the verification callback (for step-by-step notifications)
+     * Set all callbacks for verification flow
      */
-    fun setCallback(callback: VerificationCallback?) {
-        this.callback = callback
+    fun setCallbacks(
+        onError: (String) -> Unit,
+        onStepCompleted: (String) -> Unit = {},
+        onVerificationCompleted: () -> Unit = {}
+    ) {
+        this.onError = onError
+        this.onStepCompleted = onStepCompleted
+        this.onVerificationCompleted = onVerificationCompleted
     }
-    
-    /**
-     * Set the simple result callback (for final result only)
-     */
-    fun setOnResultCallback(onResult: ((Boolean) -> Unit)?) {
-        this.onResultCallback = onResult
-    }
-    
-    /**
-     * Get the current callback
-     */
-    fun getCallback(): VerificationCallback? = callback
     
     /**
      * Notify that a step is completed
      */
     fun notifyStepCompleted(step: String) {
-        callback?.onStepCompleted(step)
+        onStepCompleted?.invoke(step)
     }
     
     /**
-     * Notify that verification is completed
+     * Notify that verification is completed (user exits completion screen)
      */
     fun notifyVerificationCompleted() {
-        callback?.onVerificationCompleted()
-        // Also call the simple onResult callback with success
-        onResultCallback?.invoke(true)
+        onVerificationCompleted?.invoke()
     }
     
     /**
-     * Notify that verification failed
+     * Notify that verification failed (for internal errors)
      */
     fun notifyVerificationFailed(error: String) {
-        callback?.onVerificationFailed(error)
-        // Also call the simple onResult callback with failure
-        onResultCallback?.invoke(false)
+        onError?.invoke(error)
     }
     
     /**
      * Clear all callbacks
      */
     fun clear() {
-        callback = null
-        onResultCallback = null
+        onError = null
+        onStepCompleted = null
+        onVerificationCompleted = null
     }
 }

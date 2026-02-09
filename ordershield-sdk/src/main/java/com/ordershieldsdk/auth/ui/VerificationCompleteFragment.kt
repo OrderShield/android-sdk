@@ -14,9 +14,6 @@ class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_com
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Notify callback that all verification is completed
-        CallbackManager.notifyVerificationCompleted()
-
         initViews(view)
         setupClickListeners()
     }
@@ -27,6 +24,8 @@ class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_com
 
     private fun setupClickListeners() {
         btnClose.setOnClickListener {
+            // Call callback before finishing - allows app to navigate (e.g., to payment screen)
+            CallbackManager.notifyVerificationCompleted()
             activity?.setResult(android.app.Activity.RESULT_OK)
             activity?.finish()
         }
