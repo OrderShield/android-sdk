@@ -20,6 +20,7 @@ import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.EventTracker
+import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
@@ -76,6 +77,9 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
         btnGetOtp = view.findViewById(R.id.btnGetOtp)
         otpSection = view.findViewById(R.id.otpSection)
         etVerificationCode = view.findViewById(R.id.etVerificationCode)
+
+        // Prefill email when step is shown (value from setEmail)
+        SessionManager.getEmail()?.takeIf { it.isNotBlank() }?.let { etEmail.setText(it) }
 
         // Check if OTP is required
         val isOtpRequired = VerificationSettingsManager.isEmailVerificationRequired()
@@ -310,17 +314,13 @@ class EmailFragment : Fragment(R.layout.fragment_email) {
     }
 
     private fun navigateToNextStep() {
-        // Navigate to next step after email (and OTP if required)
-        val nextStep = StepNavigator.getNextStep(StepNavigator.Step.EMAIL)
-        if (nextStep != null) {
-            val fragment = StepNavigator.createFragmentForStep(nextStep)
-            parentFragmentManager.beginTransaction().replace(R.id.fragmentContainer, fragment).commit()
-        } else {
-            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
-            Log.w("EmailFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
-            val fragment = StepNavigator.createFragmentForStep(StepNavigator.Step.COMPLETE)
-            parentFragmentManager.beginTransaction().replace(R.id.fragmentContainer, fragment).commit()
-        }
+        VerificationFlowHelper.resolveAndNavigate(
+            parentFragmentManager,
+            StepNavigator.Step.EMAIL,
+            lifecycleScope,
+            requireContext(),
+            repository
+        )
     }
 
     fun isEmailValid(): Boolean {

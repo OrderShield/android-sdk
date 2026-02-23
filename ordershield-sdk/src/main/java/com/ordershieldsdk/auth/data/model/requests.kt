@@ -124,7 +124,10 @@ data class SendEmailCodeRequest(
     val sessionToken: String,
     
     @SerializedName("email")
-    val email: String
+    val email: String,
+    
+    @SerializedName("skip_verification")
+    val skipVerification: Boolean = false
 )
 
 /**
@@ -155,7 +158,10 @@ data class SendPhoneCodeRequest(
     val sessionToken: String,
     
     @SerializedName("phone_number")
-    val phoneNumber: String
+    val phoneNumber: String,
+    
+    @SerializedName("skip_verification")
+    val skipVerification: Boolean = false
 )
 
 /**

@@ -1,6 +1,7 @@
 package com.ordershieldsdk.auth.internal
 
 import androidx.fragment.app.Fragment
+import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.ui.*
 
@@ -171,6 +172,85 @@ object StepNavigator {
             "Accept and Sign"
         } else {
             "Accept and Continue"
+        }
+    }
+
+    /** Result of "what to do next": show step UI, skip with no API (already completed), or skip and call API (pre-set via set methods) */
+    sealed class NextAction {
+        data class Show(val step: Step) : NextAction()
+        /** Skip step without calling API (step already in steps_completed from customer-info) */
+        data class SkipNoApi(val step: Step) : NextAction()
+        /** Skip step but call its API in background (pre-set via setPhoneNumber/setEmail/setFirstName etc.) */
+        data class SkipWithApi(val step: Step) : NextAction()
+    }
+
+    /**
+     * Get the next action: Show(step), SkipNoApi(step), SkipWithApi(step), or null (COMPLETE).
+     * - SkipNoApi: step in steps_completed only → just skip, no API.
+     * - SkipWithApi: step skipped due to set method → call API then re-resolve.
+     */
+    fun getNextStepToShow(currentStep: Step): NextAction? {
+        val stepOrder = listOf(Step.PHONE, Step.SELFIE, Step.USER_INFO, Step.EMAIL, Step.TERMS_SIGNATURE)
+        val startIndex = when (currentStep) {
+            Step.INFO -> -1
+            Step.PHONE -> 0
+            Step.SELFIE -> 1
+            Step.USER_INFO -> 2
+            Step.EMAIL -> 3
+            Step.TERMS_SIGNATURE -> 4
+            Step.COMPLETE -> return null
+        }
+        val completed = SessionManager.getStepsCompleted() ?: emptyList()
+        for (i in (startIndex + 1) until stepOrder.size) {
+            val step = stepOrder[i]
+            if (!isStepEnabled(step)) continue
+            when (val skip = getSkipAction(step, completed)) {
+                null -> return NextAction.Show(step)
+                else -> return skip
+            }
+        }
+        return null // COMPLETE
+    }
+
+    private fun isStepEnabled(step: Step): Boolean = shouldShowStep(step)
+
+    /**
+     * If step should be skipped: return SkipNoApi (already completed, no API) or SkipWithApi (pre-set, call API). Else null = show.
+     */
+    private fun getSkipAction(step: Step, stepsCompleted: List<String>): NextAction? {
+        return when (step) {
+            Step.SELFIE, Step.TERMS_SIGNATURE -> null
+            Step.PHONE -> {
+                val completed = stepsCompleted.contains("sms")
+                val preSet = SessionManager.getPhoneNumber()?.isNotBlank() == true
+                when {
+                    completed && !preSet -> NextAction.SkipNoApi(step)
+                    preSet -> NextAction.SkipWithApi(step)
+                    else -> null
+                }
+            }
+            Step.EMAIL -> {
+                val completed = stepsCompleted.contains("email")
+                val preSet = SessionManager.getEmail()?.isNotBlank() == true
+                when {
+                    completed && !preSet -> NextAction.SkipNoApi(step)
+                    preSet -> NextAction.SkipWithApi(step)
+                    else -> null
+                }
+            }
+            Step.USER_INFO -> {
+                val completed = stepsCompleted.contains("userInfo") || stepsCompleted.contains("user_info")
+                val fn = SessionManager.getFirstName()?.isNotBlank() == true
+                val ln = SessionManager.getLastName()?.isNotBlank() == true
+                val dob = SessionManager.getDob()?.isNotBlank() == true
+                val preSet = fn && ln && dob
+                when {
+                    completed && !preSet -> NextAction.SkipNoApi(step)
+                    preSet -> NextAction.SkipWithApi(step)
+                    else -> null
+                }
+            }
+            Step.INFO, Step.COMPLETE -> null
         }
     }
 }

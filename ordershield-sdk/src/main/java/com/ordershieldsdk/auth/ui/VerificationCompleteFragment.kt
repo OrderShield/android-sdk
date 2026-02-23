@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.EventTracker
+import com.ordershieldsdk.auth.core.SessionManager
 
 class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_complete) {
 
@@ -28,8 +29,8 @@ class VerificationCompleteFragment : Fragment(R.layout.fragment_verification_com
 
     private fun setupClickListeners() {
         btnClose.setOnClickListener {
-            // Call callback before finishing - allows app to navigate (e.g., to payment screen)
             CallbackManager.notifyVerificationCompleted()
+            SessionManager.clear()
             activity?.setResult(android.app.Activity.RESULT_OK)
             activity?.finish()
         }

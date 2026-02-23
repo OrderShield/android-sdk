@@ -15,6 +15,7 @@ internal object SdkPreferences {
     private const val KEY_SESSION_ID = "session_id"
     private const val KEY_SESSION_TOKEN = "session_token"
     private const val KEY_STEPS_REMAINING = "steps_remaining" // comma-separated
+    private const val KEY_STEPS_COMPLETED = "steps_completed" // comma-separated (from customer-info API)
     private const val KEY_FIRST_NAME = "first_name"
     private const val KEY_LAST_NAME = "last_name"
     private const val KEY_DOB = "dob"
@@ -57,12 +58,23 @@ internal object SdkPreferences {
         return raw.split(COMMA).filter { it.isNotBlank() }
     }
 
+    fun setStepsCompleted(steps: List<String>?) {
+        val value = steps?.joinToString(COMMA) ?: ""
+        if (prefs != null) requirePrefs().edit().putString(KEY_STEPS_COMPLETED, value).apply()
+    }
+    fun getStepsCompleted(): List<String>? {
+        val raw = prefs?.getString(KEY_STEPS_COMPLETED, null) ?: return null
+        if (raw.isEmpty()) return emptyList()
+        return raw.split(COMMA).filter { it.isNotBlank() }
+    }
+
     fun clearSession() {
         requirePrefs().edit()
             .remove(KEY_CUSTOMER_ID)
             .remove(KEY_SESSION_ID)
             .remove(KEY_SESSION_TOKEN)
             .remove(KEY_STEPS_REMAINING)
+            .remove(KEY_STEPS_COMPLETED)
             .apply()
     }
 

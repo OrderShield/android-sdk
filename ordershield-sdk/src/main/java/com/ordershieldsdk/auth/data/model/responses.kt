@@ -568,6 +568,37 @@ data class VerificationStatusResult(
 )
 
 /**
+ * Customer info API response data
+ */
+data class CustomerInfoData(
+    @SerializedName("customer_id")
+    val customerId: String,
+    
+    @SerializedName("steps_completed")
+    val stepsCompleted: List<String>?
+)
+
+/**
+ * Customer info API response wrapper
+ */
+data class CustomerInfoResponse(
+    @SerializedName("status")
+    val status: String,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: CustomerInfoData,
+    
+    @SerializedName("dto")
+    val dto: Map<String, Any>?,
+    
+    @SerializedName("statusCode")
+    val statusCode: Int
+)
+
+/**
  * Response model for track event API
  */
 data class TrackEventResponse(

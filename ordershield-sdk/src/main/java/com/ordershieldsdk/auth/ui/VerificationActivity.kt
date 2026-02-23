@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
+import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.internal.StepNavigator
 
 class VerificationActivity : AppCompatActivity() {
@@ -42,8 +43,8 @@ class VerificationActivity : AppCompatActivity() {
                 // Check if we're on completion screen
                 val currentFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
                 if (currentFragment is VerificationCompleteFragment) {
-                    // Call callback before finishing - allows app to navigate (e.g., to payment screen)
                     CallbackManager.notifyVerificationCompleted()
+                    SessionManager.clear()
                     finish()
                 } else {
                     // For other screens, allow normal back navigation

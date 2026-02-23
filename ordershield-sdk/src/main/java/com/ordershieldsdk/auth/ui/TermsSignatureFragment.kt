@@ -301,20 +301,13 @@ class TermsSignatureFragment : Fragment(R.layout.fragment_terms_signature) {
     }
 
     private fun navigateToNextStep() {
-        val nextStep = StepNavigator.getNextStep(StepNavigator.Step.TERMS_SIGNATURE)
-        if (nextStep != null) {
-            val fragment = StepNavigator.createFragmentForStep(nextStep)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        } else {
-            // TERMS_SIGNATURE should always return COMPLETE, but handle null gracefully
-            Log.w("TermsSignatureFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
-            val fragment = StepNavigator.createFragmentForStep(StepNavigator.Step.COMPLETE)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        }
+        VerificationFlowHelper.resolveAndNavigate(
+            parentFragmentManager,
+            StepNavigator.Step.TERMS_SIGNATURE,
+            lifecycleScope,
+            requireContext(),
+            repository
+        )
     }
 }
 

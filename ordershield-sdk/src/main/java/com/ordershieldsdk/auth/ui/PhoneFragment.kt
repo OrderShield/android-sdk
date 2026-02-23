@@ -24,6 +24,7 @@ import com.ordershieldsdk.auth.core.CountryCodeHelper
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.EventTracker
+import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.core.VerificationSettingsManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
@@ -88,6 +89,9 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
         btnGetOtp = view.findViewById(R.id.btnGetOtp)
         otpSection = view.findViewById(R.id.otpSection)
         etVerificationCode = view.findViewById(R.id.etVerificationCode)
+
+        // Prefill phone when step is shown (value from setPhoneNumber)
+        SessionManager.getPhoneNumber()?.takeIf { it.isNotBlank() }?.let { etPhoneNumber.setText(it) }
 
         // Check if OTP is required
         val isOtpRequired = VerificationSettingsManager.isSmsVerificationRequired()
@@ -373,21 +377,13 @@ class PhoneFragment : Fragment(R.layout.fragment_phone) {
     }
 
     private fun navigateToNextStep() {
-        // Navigate to next step after phone (and OTP if required)
-        val nextStep = StepNavigator.getNextStep(StepNavigator.Step.PHONE)
-        if (nextStep != null) {
-            val fragment = StepNavigator.createFragmentForStep(nextStep)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        } else {
-            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
-            Log.w("PhoneFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
-            val fragment = StepNavigator.createFragmentForStep(StepNavigator.Step.COMPLETE)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        }
+        VerificationFlowHelper.resolveAndNavigate(
+            parentFragmentManager,
+            StepNavigator.Step.PHONE,
+            lifecycleScope,
+            requireContext(),
+            repository
+        )
     }
 
     fun isPhoneValid(): Boolean {

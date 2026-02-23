@@ -184,20 +184,16 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
                         "Empty steps_remaining with isComplete=${statusResult.isComplete}"
                     )
                 }
-                // Normal case: store steps_remaining and proceed
+                // Normal case: store steps_remaining, fetch customer-info for steps_completed, then proceed
                 else -> {
                     SessionManager.setStepsRemaining(statusResult.stepsRemaining)
-                    showLoader(false)
-                    btnStartVerification.isEnabled = true
-                    // Track session start event
-                    EventTracker.trackSessionStart()
+                    fetchCustomerInfoAndProceed()
                 }
             }
         }.onFailure { exception ->
             // Check if error is retryable
             if (isRetryableError(exception) && getStatusRetryCount < MAX_RETRIES) {
                 getStatusRetryCount++
-                // Track retry event
                 EventTracker.trackStepRetry("get_verification_status")
                 val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (getStatusRetryCount - 1)) // Exponential backoff
                 android.util.Log.d(
@@ -213,6 +209,28 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
                 ErrorHandler.showError(requireContext(), exception)
             }
         }
+    }
+
+    /**
+     * Fetch customer-info (steps_completed) then enable Start button and track session start.
+     */
+    private suspend fun fetchCustomerInfoAndProceed() {
+        val customerId = SessionManager.getCustomerId() ?: run {
+            showLoader(false)
+            btnStartVerification.isEnabled = true
+            EventTracker.trackSessionStart()
+            return
+        }
+        repository.getCustomerInfo(customerId)
+            .onSuccess { data ->
+                SessionManager.setStepsCompleted(data.stepsCompleted)
+            }
+            .onFailure { _ ->
+                // Non-blocking: proceed without steps_completed (no skip-by-completed)
+            }
+        showLoader(false)
+        btnStartVerification.isEnabled = true
+        EventTracker.trackSessionStart()
     }
 
     /**
@@ -293,38 +311,18 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
 
     private fun setupClickListeners() {
         btnStartVerification.setOnClickListener {
-            // Navigate to next step based on settings
-            navigateToNextStep()
+            VerificationFlowHelper.resolveAndNavigate(
+                parentFragmentManager,
+                com.ordershieldsdk.auth.internal.StepNavigator.Step.INFO,
+                lifecycleScope,
+                requireContext(),
+                repository
+            )
         }
     }
 
-    private fun navigateToNextStep() {
-        val nextStep = com.ordershieldsdk.auth.internal.StepNavigator.getNextStep(
-            com.ordershieldsdk.auth.internal.StepNavigator.Step.INFO
-        )
-        if (nextStep != null) {
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(nextStep)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        } else {
-            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
-            android.util.Log.w("VerificationInfoFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
-            navigateToComplete()
-        }
-    }
-
-    /**
-     * Navigate directly to COMPLETE screen
-     * Used when verification is already complete or all steps are done
-     */
     private fun navigateToComplete() {
-        val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(
-            com.ordershieldsdk.auth.internal.StepNavigator.Step.COMPLETE
-        )
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+        VerificationFlowHelper.navigateToComplete(parentFragmentManager)
     }
 
     private fun enforceBlackThemeOnButton(button: MaterialButton) {

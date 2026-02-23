@@ -22,6 +22,7 @@ import com.ordershieldsdk.auth.data.model.VerifyEmailCodeRequest
 import com.ordershieldsdk.auth.data.model.VerifyEmailCodeResponse
 import com.ordershieldsdk.auth.data.model.VerifyPhoneCodeRequest
 import com.ordershieldsdk.auth.data.model.VerifyPhoneCodeResponse
+import com.ordershieldsdk.auth.data.model.CustomerInfoResponse
 import com.ordershieldsdk.auth.data.model.VerificationStatusResponse
 import retrofit2.Response
 import retrofit2.http.*
@@ -65,6 +66,14 @@ interface AuthApiService {
         @Query("customer_id") customerId: String,
         @Query("session_token") sessionToken: String
     ): Response<VerificationStatusResponse>
+
+    /**
+     * Get customer info (customer_id and steps_completed)
+     */
+    @GET("api/sdk/customer-info/{customerId}")
+    suspend fun getCustomerInfo(
+        @Path("customerId") customerId: String
+    ): Response<CustomerInfoResponse>
 
     /**
      * Upload selfie image

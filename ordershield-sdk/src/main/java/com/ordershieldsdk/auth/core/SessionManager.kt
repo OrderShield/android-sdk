@@ -26,6 +26,11 @@ internal object SessionManager {
 
     fun getStepsRemaining(): List<String>? = SdkPreferences.getStepsRemaining()
 
+    fun setStepsCompleted(steps: List<String>?) {
+        SdkPreferences.setStepsCompleted(steps)
+    }
+    fun getStepsCompleted(): List<String>? = SdkPreferences.getStepsCompleted()
+
     fun getStepsOptional(): List<String>? = null // kept for API compatibility; unused
 
     fun isStepRemaining(step: String): Boolean {
@@ -37,12 +42,16 @@ internal object SessionManager {
      * Call when verification completes or is cancelled.
      */
     fun clear() {
-        if (SdkPreferences.isInitialized()) {
-            SdkPreferences.clearSession()
-        }
+        SdkPreferences.clearSession()
     }
 
     fun hasSession(): Boolean {
         return getCustomerId() != null && getSessionId() != null && getSessionToken() != null
     }
+
+    fun getFirstName(): String? = SdkPreferences.getFirstName()
+    fun getLastName(): String? = SdkPreferences.getLastName()
+    fun getDob(): String? = SdkPreferences.getDob()
+    fun getPhoneNumber(): String? = SdkPreferences.getPhoneNumber()
+    fun getEmail(): String? = SdkPreferences.getEmail()
 }

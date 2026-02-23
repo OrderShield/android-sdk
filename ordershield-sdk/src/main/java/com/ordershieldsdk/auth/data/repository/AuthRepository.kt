@@ -95,7 +95,7 @@ class AuthRepository {
      */
     suspend fun startVerification(customerId: String): Result<Pair<String, String>> {
         return try {
-            val request = com.ordershieldsdk.auth.data.model.StartVerificationRequest(customerId = customerId)
+            val request = StartVerificationRequest(customerId = customerId)
             val response = apiService.startVerification(request)
             
             if (response.isSuccessful && response.body() != null) {
@@ -164,6 +164,60 @@ class AuthRepository {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Get customer info (customer_id and steps_completed)
+     * GET /api/sdk/customer-info/{customerId}
+     */
+    suspend fun getCustomerInfo(customerId: String): Result<CustomerInfoData> {
+        return try {
+            val response = apiService.getCustomerInfo(customerId)
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                if (body.statusCode == 200 && body.status == "success") {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body.message ?: "Failed to get customer info"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    com.ordershieldsdk.auth.core.ErrorHandler.parseApiError(errorBody)
+                } else {
+                    response.body()?.message
+                        ?: response.message()
+                        ?: "Unknown error occurred"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Run the same API that completes the step, without showing UI (skip step).
+     * Used when step is pre-set or already in steps_completed.
+     */
+    suspend fun runSkipStepApi(step: com.ordershieldsdk.auth.internal.StepNavigator.Step): Result<Unit> {
+        return when (step) {
+            com.ordershieldsdk.auth.internal.StepNavigator.Step.PHONE -> {
+                val phone = SessionManager.getPhoneNumber() ?: ""
+                sendPhoneCode(phone, skipVerification = true).map { }
+            }
+            com.ordershieldsdk.auth.internal.StepNavigator.Step.EMAIL -> {
+                val email = SessionManager.getEmail() ?: ""
+                sendEmailCode(email, skipVerification = true).map { }
+            }
+            com.ordershieldsdk.auth.internal.StepNavigator.Step.USER_INFO -> {
+                val fn = SessionManager.getFirstName() ?: ""
+                val ln = SessionManager.getLastName() ?: ""
+                val dob = SessionManager.getDob() ?: ""
+                submitUserInfo(fn, ln, dob).map { }
+            }
+            else -> Result.failure(IllegalArgumentException("runSkipStepApi only supports PHONE, EMAIL, USER_INFO"))
         }
     }
 
@@ -281,9 +335,9 @@ class AuthRepository {
 
     /**
      * Send email verification code
-     * Returns success status
+     * @param skipVerification when true, backend skips sending OTP (used when step is skipped via pre-set or already completed)
      */
-    suspend fun sendEmailCode(email: String): Result<Boolean> {
+    suspend fun sendEmailCode(email: String, skipVerification: Boolean = false): Result<Boolean> {
         return try {
             val customerId = SessionManager.getCustomerId()
             val sessionToken = SessionManager.getSessionToken()
@@ -295,7 +349,8 @@ class AuthRepository {
             val request = com.ordershieldsdk.auth.data.model.SendEmailCodeRequest(
                 customerId = customerId,
                 sessionToken = sessionToken,
-                email = email
+                email = email,
+                skipVerification = skipVerification
             )
             
             val response = apiService.sendEmailCode(request)
@@ -378,9 +433,9 @@ class AuthRepository {
 
     /**
      * Send phone verification code
-     * Returns success status
+     * @param skipVerification when true, backend skips sending OTP (used when step is skipped via pre-set or already completed)
      */
-    suspend fun sendPhoneCode(phoneNumber: String): Result<Boolean> {
+    suspend fun sendPhoneCode(phoneNumber: String, skipVerification: Boolean = false): Result<Boolean> {
         return try {
             val customerId = SessionManager.getCustomerId()
             val sessionToken = SessionManager.getSessionToken()
@@ -392,7 +447,8 @@ class AuthRepository {
             val request = com.ordershieldsdk.auth.data.model.SendPhoneCodeRequest(
                 customerId = customerId,
                 sessionToken = sessionToken,
-                phoneNumber = phoneNumber
+                phoneNumber = phoneNumber,
+                skipVerification = skipVerification
             )
             
             val response = apiService.sendPhoneCode(request)

@@ -495,24 +495,13 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
     }
     
     private fun navigateToNextStep() {
-        val nextStep = com.ordershieldsdk.auth.internal.StepNavigator.getNextStep(
-            com.ordershieldsdk.auth.internal.StepNavigator.Step.SELFIE
+        VerificationFlowHelper.resolveAndNavigate(
+            parentFragmentManager,
+            com.ordershieldsdk.auth.internal.StepNavigator.Step.SELFIE,
+            lifecycleScope,
+            requireContext(),
+            repository
         )
-        if (nextStep != null) {
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(nextStep)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        } else {
-            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
-            Log.w("CameraFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(
-                com.ordershieldsdk.auth.internal.StepNavigator.Step.COMPLETE
-            )
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        }
     }
 
     override fun onDestroy() {

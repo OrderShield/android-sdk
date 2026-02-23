@@ -21,6 +21,7 @@ import com.ordershieldsdk.auth.R
 import com.ordershieldsdk.auth.core.CallbackManager
 import com.ordershieldsdk.auth.core.ErrorHandler
 import com.ordershieldsdk.auth.core.EventTracker
+import com.ordershieldsdk.auth.core.SessionManager
 import com.ordershieldsdk.auth.data.repository.AuthRepository
 import com.ordershieldsdk.auth.internal.StepNavigator
 import kotlinx.coroutines.launch
@@ -85,7 +86,11 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
         scrollView = view.findViewById(R.id.scrollView)
         loadingOverlay = view.findViewById(R.id.loadingOverlay)
         
-        // Enforce black theme on button when enabled
+        // Prefill from setFirstName/setLastName/setDOB when not all three set (step is shown)
+        SessionManager.getFirstName()?.let { etFirstName.setText(it); firstName = it }
+        SessionManager.getLastName()?.let { etLastName.setText(it); lastName = it }
+        SessionManager.getDob()?.let { etDateOfBirth.setText(it); dateOfBirth = it }
+        
         enforceButtonTheme()
     }
     
@@ -287,24 +292,13 @@ class UserInformationFragment : Fragment(R.layout.fragment_user_information) {
     }
     
     private fun navigateToNextStep() {
-        val nextStep = com.ordershieldsdk.auth.internal.StepNavigator.getNextStep(
-            com.ordershieldsdk.auth.internal.StepNavigator.Step.USER_INFO
+        VerificationFlowHelper.resolveAndNavigate(
+            parentFragmentManager,
+            com.ordershieldsdk.auth.internal.StepNavigator.Step.USER_INFO,
+            lifecycleScope,
+            requireContext(),
+            repository
         )
-        if (nextStep != null) {
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(nextStep)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        } else {
-            // Unexpected null - fallback to COMPLETE screen to prevent user being stuck
-            Log.w("UserInformationFragment", "getNextStep returned null, navigating to COMPLETE as fallback")
-            val fragment = com.ordershieldsdk.auth.internal.StepNavigator.createFragmentForStep(
-                com.ordershieldsdk.auth.internal.StepNavigator.Step.COMPLETE
-            )
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit()
-        }
     }
 
     fun isValid(): Boolean {
