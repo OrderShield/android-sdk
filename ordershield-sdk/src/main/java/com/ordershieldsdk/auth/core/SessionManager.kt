@@ -1,96 +1,48 @@
 package com.ordershieldsdk.auth.core
 
 /**
- * Manager to store session information during verification
- * Stores customer_id, session_id, and session_token until verification completes
+ * Manager to store and read session information during verification.
+ * All data is persisted via [SdkPreferences] (SharedPreferences).
  */
 internal object SessionManager {
-    
-    @Volatile
-    private var customerId: String? = null
-    
-    @Volatile
-    private var sessionId: String? = null
-    
-    @Volatile
-    private var sessionToken: String? = null
-    
-    @Volatile
-    private var stepsRemaining: List<String>? = null
-    
-    @Volatile
-    private var stepsOptional: List<String>? = null
-    
-    /**
-     * Store customer ID
-     */
+
     fun setCustomerId(customerId: String) {
-        this.customerId = customerId
+        SdkPreferences.setCustomerId(customerId)
     }
-    
-    /**
-     * Get customer ID
-     */
-    fun getCustomerId(): String? = customerId
-    
-    /**
-     * Store session ID and token
-     */
+
+    fun getCustomerId(): String? = SdkPreferences.getCustomerId()
+
     fun setSession(sessionId: String, sessionToken: String) {
-        this.sessionId = sessionId
-        this.sessionToken = sessionToken
+        SdkPreferences.setSession(sessionId, sessionToken)
     }
-    
-    /**
-     * Store steps remaining from verification status
-     */
+
+    fun getSessionId(): String? = SdkPreferences.getSessionId()
+
+    fun getSessionToken(): String? = SdkPreferences.getSessionToken()
+
     fun setStepsRemaining(stepsRemaining: List<String>?) {
-        this.stepsRemaining = stepsRemaining
+        SdkPreferences.setStepsRemaining(stepsRemaining)
     }
-    
-    /**
-     * Get session ID
-     */
-    fun getSessionId(): String? = sessionId
-    
-    /**
-     * Get session token
-     */
-    fun getSessionToken(): String? = sessionToken
-    
-    /**
-     * Get remaining steps for this session
-     */
-    fun getStepsRemaining(): List<String>? = stepsRemaining
-    
-    /**
-     * Get optional steps for this session
-     */
-    fun getStepsOptional(): List<String>? = stepsOptional
-    
-    /**
-     * Check if a step is in remaining steps
-     */
+
+    fun getStepsRemaining(): List<String>? = SdkPreferences.getStepsRemaining()
+
+    fun getStepsOptional(): List<String>? = null // kept for API compatibility; unused
+
     fun isStepRemaining(step: String): Boolean {
-        return stepsRemaining?.contains(step) == true
+        return getStepsRemaining()?.contains(step) == true
     }
-    
+
     /**
-     * Clear all session data
-     * Call this when verification completes or is cancelled
+     * Clear all session data (customer_id, session_id, session_token, steps_remaining).
+     * Call when verification completes or is cancelled.
      */
     fun clear() {
-        customerId = null
-        sessionId = null
-        sessionToken = null
-        stepsRemaining = null
-        stepsOptional = null
+        if (SdkPreferences.isInitialized()) {
+            SdkPreferences.clearSession()
+        }
     }
-    
-    /**
-     * Check if session is initialized
-     */
+
     fun hasSession(): Boolean {
-        return customerId != null && sessionId != null && sessionToken != null
+        return getCustomerId() != null && getSessionId() != null && getSessionToken() != null
     }
 }

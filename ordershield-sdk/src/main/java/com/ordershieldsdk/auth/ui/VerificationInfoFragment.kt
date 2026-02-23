@@ -65,10 +65,14 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
 
         lifecycleScope.launch {
             try {
-                // Step 1: Register device with retry
-                registerDeviceWithRetry()
+                // Session is created at SDK init and stored in SharedPreferences.
+                // If already present, only fetch verification status; otherwise register + start then status.
+                if (SessionManager.hasSession()) {
+                    getVerificationStatusWithRetry()
+                } else {
+                    registerDeviceWithRetry()
+                }
             } catch (e: Exception) {
-                // Handle exception
                 showLoader(false)
                 btnStartVerification.isEnabled = true
                 ErrorHandler.showError(requireContext(), e)

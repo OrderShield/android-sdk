@@ -14,26 +14,64 @@ import kotlinx.coroutines.launch
 object AuthSDK {
     @Volatile
     private var isInitialized = false
-    
+
     @Volatile
     private var isSettingsLoaded = false
-    
+
+    @Volatile
+    private var appContext: Context? = null
+
     private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val repository by lazy { AuthRepository() }
 
     /**
      * Initialize SDK with configuration (internal method)
-     * @param config SDK configuration containing API key, base URL, etc.
+     * @param config SDK configuration containing API key, base URL, and optional context.
      */
     private fun initInternal(config: SDKConfig) {
         try {
-            // Initialize network module with configuration
+            config.context?.let { ctx ->
+                appContext = ctx.applicationContext
+                SdkPreferences.initialize(ctx)
+            }
             NetworkModule.getInstance().initialize(config)
             isInitialized = true
-            
-            // Call verification settings API after initialization
+
             fetchVerificationSettings()
+
+            // Register device and create session at init; persist in SharedPreferences
+            config.context?.let { ensureSessionAsync(it) }
         } catch (e: Exception) {
             throw IllegalStateException("Failed to initialize SDK: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Runs register device + start verification and persists session in SharedPreferences.
+     * Called during init when context is available; also used as fallback by sendEvent.
+     */
+    private fun ensureSessionAsync(context: Context) {
+        sdkScope.launch {
+            try {
+                val deviceInfo = DeviceInfoHelper.getDeviceInfo(context)
+                repository.registerDevice(deviceInfo)
+                    .onSuccess { customerId ->
+                        SessionManager.setCustomerId(customerId)
+                        repository.startVerification(customerId)
+                            .onSuccess { (sessionId, sessionToken) ->
+                                SessionManager.setSession(sessionId, sessionToken)
+                                Log.d("OrderShieldSDK", "Session created and stored at init")
+                            }
+                            .onFailure { e ->
+                                Log.e("OrderShieldSDK", "startVerification at init failed: ${e.message}")
+                            }
+                    }
+                    .onFailure { e ->
+                        Log.e("OrderShieldSDK", "registerDevice at init failed: ${e.message}")
+                    }
+            } catch (e: Exception) {
+                Log.e("OrderShieldSDK", "ensureSession failed: ${e.message}", e)
+            }
         }
     }
     
@@ -76,17 +114,80 @@ object AuthSDK {
     ) {
         val config = SDKConfig(
             apiKey = apiKey,
-            enableLogging = enableLogging
+            enableLogging = enableLogging,
+            context = context.applicationContext
         )
         initInternal(config)
     }
-    
+
     /**
      * Initialize SDK with configuration
-     * @param config SDK configuration containing API key, base URL, etc.
+     * @param config SDK configuration (include context for session persistence and register/session at init)
      */
     fun init(config: SDKConfig) {
         initInternal(config)
+    }
+
+    // --------------- User data keys (stored in SharedPreferences; usage TBD) ---------------
+
+    fun setFirstName(value: String) {
+        if (SdkPreferences.isInitialized()) SdkPreferences.setFirstName(value)
+    }
+
+    fun setLastName(value: String) {
+        if (SdkPreferences.isInitialized()) SdkPreferences.setLastName(value)
+    }
+
+    fun setDOB(value: String) {
+        if (SdkPreferences.isInitialized()) SdkPreferences.setDob(value)
+    }
+
+    fun setPhoneNumber(value: String) {
+        if (SdkPreferences.isInitialized()) SdkPreferences.setPhoneNumber(value)
+    }
+
+    fun setEmail(value: String) {
+        if (SdkPreferences.isInitialized()) SdkPreferences.setEmail(value)
+    }
+
+    /**
+     * Send a custom event to the track-event API.
+     * If customer_id and session_token are already in SharedPreferences, uses them.
+     * Otherwise calls register device + start verification to obtain session, then sends the event.
+     * Safe to call from outside the SDK; no-op if SDK was not initialized with context.
+     */
+    fun sendEvent(eventName: String, eventValue: String) {
+        if (!SdkPreferences.isInitialized()) {
+            Log.w("OrderShieldSDK", "sendEvent ignored: SDK not initialized with context")
+            return
+        }
+        sdkScope.launch {
+            if (SessionManager.hasSession()) {
+                EventTracker.trackEvent(eventName, eventValue)
+            } else {
+                val ctx = appContext ?: return@launch
+                try {
+                    val deviceInfo = DeviceInfoHelper.getDeviceInfo(ctx)
+                    repository.registerDevice(deviceInfo)
+                        .onSuccess { customerId ->
+                            SessionManager.setCustomerId(customerId)
+                            repository.startVerification(customerId)
+                                .onSuccess { (sessionId, sessionToken) ->
+                                    SessionManager.setSession(sessionId, sessionToken)
+                                    EventTracker.trackEvent(eventName, eventValue)
+                                }
+                                .onFailure { e ->
+                                    Log.e("OrderShieldSDK", "sendEvent: startVerification failed: ${e.message}")
+                                }
+                        }
+                        .onFailure { e ->
+                            Log.e("OrderShieldSDK", "sendEvent: registerDevice failed: ${e.message}")
+                        }
+                } catch (e: Exception) {
+                    Log.e("OrderShieldSDK", "sendEvent failed: ${e.message}", e)
+                }
+            }
+        }
     }
 
     /**

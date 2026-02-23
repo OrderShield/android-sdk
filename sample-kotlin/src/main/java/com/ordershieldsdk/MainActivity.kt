@@ -4,9 +4,12 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.ordershieldsdk.auth.core.AuthSDK
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     
@@ -30,6 +33,7 @@ class MainActivity : AppCompatActivity() {
                 apiKey = (etApiKey.text?.toString() ?: "").trim(),
                 enableLogging = true
             )
+            AuthSDK.sendEvent("abcd","abcd")
         }
         
         btnStartVerification.setOnClickListener {
