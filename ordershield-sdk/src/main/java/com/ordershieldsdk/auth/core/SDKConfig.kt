@@ -18,6 +18,6 @@ data class SDKConfig(
     
     companion object {
         // Base URL for OrderShield API
-        const val BASE_URL = "https://ordershield-api.projectbeta.biz/"
+        const val BASE_URL = "https://api.ordershield.ai/"
     }
 }
