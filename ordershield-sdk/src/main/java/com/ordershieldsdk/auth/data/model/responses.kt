@@ -568,6 +568,26 @@ data class VerificationStatusResult(
 )
 
 /**
+ * Customer object inside customer-info API response (data.customer)
+ */
+data class CustomerInfoCustomer(
+    @SerializedName("email")
+    val email: String?,
+    
+    @SerializedName("phone")
+    val phone: String?,
+    
+    @SerializedName("firstName")
+    val firstName: String?,
+    
+    @SerializedName("lastName")
+    val lastName: String?,
+    
+    @SerializedName("dateOfBirth")
+    val dateOfBirth: String?
+)
+
+/**
  * Customer info API response data
  */
 data class CustomerInfoData(
@@ -575,7 +595,10 @@ data class CustomerInfoData(
     val customerId: String,
     
     @SerializedName("steps_completed")
-    val stepsCompleted: List<String>?
+    val stepsCompleted: List<String>?,
+    
+    @SerializedName("customer")
+    val customer: CustomerInfoCustomer?
 )
 
 /**

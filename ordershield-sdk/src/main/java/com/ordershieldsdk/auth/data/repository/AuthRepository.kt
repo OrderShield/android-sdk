@@ -199,22 +199,27 @@ class AuthRepository {
 
     /**
      * Run the same API that completes the step, without showing UI (skip step).
-     * Used when step is pre-set or already in steps_completed.
+     * Uses customer-info API's data.customer values when not null; otherwise set-method values (prefs).
      */
     suspend fun runSkipStepApi(step: com.ordershieldsdk.auth.internal.StepNavigator.Step): Result<Unit> {
+        val fromApi = SessionManager.getCustomerFromApi()
         return when (step) {
             com.ordershieldsdk.auth.internal.StepNavigator.Step.PHONE -> {
-                val phone = SessionManager.getPhoneNumber() ?: ""
+                val phone = fromApi?.phone?.takeIf { it.isNotBlank() }
+                    ?: SessionManager.getPhoneNumber()
+                    ?: ""
                 sendPhoneCode(phone, skipVerification = true).map { }
             }
             com.ordershieldsdk.auth.internal.StepNavigator.Step.EMAIL -> {
-                val email = SessionManager.getEmail() ?: ""
+                val email = fromApi?.email?.takeIf { it.isNotBlank() }
+                    ?: SessionManager.getEmail()
+                    ?: ""
                 sendEmailCode(email, skipVerification = true).map { }
             }
             com.ordershieldsdk.auth.internal.StepNavigator.Step.USER_INFO -> {
-                val fn = SessionManager.getFirstName() ?: ""
-                val ln = SessionManager.getLastName() ?: ""
-                val dob = SessionManager.getDob() ?: ""
+                val fn = fromApi?.firstName?.takeIf { it.isNotBlank() } ?: SessionManager.getFirstName() ?: ""
+                val ln = fromApi?.lastName?.takeIf { it.isNotBlank() } ?: SessionManager.getLastName() ?: ""
+                val dob = fromApi?.dateOfBirth?.takeIf { it.isNotBlank() } ?: SessionManager.getDob() ?: ""
                 submitUserInfo(fn, ln, dob).map { }
             }
             else -> Result.failure(IllegalArgumentException("runSkipStepApi only supports PHONE, EMAIL, USER_INFO"))

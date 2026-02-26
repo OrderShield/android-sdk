@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
                 apiKey = (etApiKey.text?.toString() ?: "").trim(),
                 enableLogging = true
             )
-            AuthSDK.sendEvent("abcd","abcd")
+//            AuthSDK.sendEvent("abcd","abcd")
         }
         
         btnStartVerification.setOnClickListener {

@@ -224,6 +224,7 @@ class VerificationInfoFragment : Fragment(R.layout.fragment_verification_info) {
         repository.getCustomerInfo(customerId)
             .onSuccess { data ->
                 SessionManager.setStepsCompleted(data.stepsCompleted)
+                SessionManager.setCustomerFromApi(data.customer)
             }
             .onFailure { _ ->
                 // Non-blocking: proceed without steps_completed (no skip-by-completed)
